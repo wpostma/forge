@@ -20,6 +20,7 @@ public abstract class GameObject {
      * @param source
      *            the source
      * @param spellAbility
+     *            traits of a trigger, replacement effect or static ability
      * @return true, if is valid
      */
     public boolean isValid(final String[] restrictions, final Player sourceController, final Card source, CardTraitBase spellAbility) {
@@ -41,6 +42,7 @@ public abstract class GameObject {
      * @param source
      *            the source
      * @param spellAbility
+     *            traits of a trigger, replacement effect or static ability
      * @return true, if is valid
      */
     public boolean isValid(final String restriction, final Player sourceController, final Card source, CardTraitBase spellAbility) {
@@ -57,6 +59,7 @@ public abstract class GameObject {
      * @param source
      *            the source
      * @param spellAbility
+     *            traits of a trigger, replacement effect or static ability
      * @return true, if successful
      */
     public boolean hasProperty(final String property, final Player sourceController, final Card source, CardTraitBase spellAbility) {
