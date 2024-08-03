@@ -34,12 +34,16 @@ public final class Main {
      */
     public static void main(final String[] args) {
 
+
         Sentry.init(options -> {
             options.setEnableExternalConfiguration(true);
             options.setRelease(BuildInfo.getVersionString());
             options.setEnvironment(System.getProperty("os.name"));
             options.setTag("Java Version", System.getProperty("java.version"));
+            //options.setDsn("");
         }, true);
+
+
 
         // HACK - temporary solution to "Comparison method violates it's general contract!" crash
         System.setProperty("java.util.Arrays.useLegacyMergeSort", "true");
@@ -56,8 +60,17 @@ public final class Main {
         //install our error handler
         ExceptionHandler.registerErrorHandling();
 
+        int forgeArgs = 0;
+        int i;
+        for (i = 0; i<args.length;i++){
+            if ( args[i].startsWith("-") ) {
+                break;
+            }
+            forgeArgs = i+1;
+            System.out.format("forge command line startup: %s ", args[i]);
+        }
         // Start splash screen first, then data models, then controller.
-        if (args.length == 0) {
+        if (forgeArgs == 0) {
             Singletons.initializeOnce(true);
 
             // Controller can now step in and take over.
@@ -70,6 +83,7 @@ public final class Main {
         
         switch(mode) {
             case "sim":
+                System.out.println("simulate match");
                 SimulateMatch.simulate(args);
                 break;
 
@@ -82,7 +96,7 @@ public final class Main {
                 break;
             
             default:
-                System.out.println("Unknown mode.\nKnown mode is 'sim', 'parse' ");
+                System.out.format("Unknown mode.\nKnown mode is 'sim', 'parse'. \n parameter:  %s \n\n", args[0] );
                 break;
         }
         
