@@ -27,7 +27,54 @@ import io.sentry.Sentry;
 
 /**
  * Main class for Forge's swing application view.
+ *
+ *
+ *
+ *
+ *
  */
+
+/*
+
+IDE launch parameters : JDK 17+
+
+-Xms768m
+-XX:+UseParallelGC
+-Dsun.java2d.xrender=false
+--add-opens
+java.base/java.util=ALL-UNNAMED
+--add-opens
+java.base/java.lang=ALL-UNNAMED
+--add-opens
+java.base/java.lang.reflect=ALL-UNNAMED
+--add-opens
+java.base/java.text=ALL-UNNAMED
+--add-opens
+java.desktop/java.awt.font=ALL-UNNAMED
+--add-opens
+java.base/jdk.internal.misc=ALL-UNNAMED
+--add-opens
+java.base/sun.nio.ch=ALL-UNNAMED
+--add-opens
+java.base/java.nio=ALL-UNNAMED
+--add-opens
+java.base/java.math=ALL-UNNAMED
+--add-opens
+java.base/java.util.concurrent=ALL-UNNAMED
+--add-opens
+java.desktop/java.awt=ALL-UNNAMED
+--add-opens
+java.base/java.net=ALL-UNNAMED
+--add-opens
+java.desktop/javax.swing=ALL-UNNAMED
+--add-opens
+java.desktop/java.beans=ALL-UNNAMED
+--add-opens
+java.desktop/javax.swing.border=ALL-UNNAMED
+-Dio.netty.tryReflectionSetAccessible=true
+
+*/
+
 public final class Main {
     /**
      * Main entry point for Forge
