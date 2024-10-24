@@ -81,7 +81,7 @@ public class PumpEffect extends SpellAbilityEffect {
                 params.put("Category", "Keywords");
                 gameCard.addPerpetual(params);
             }
-            gameCard.addChangedCardKeywords(kws, Lists.newArrayList(), false, timestamp, 0);                
+            gameCard.addChangedCardKeywords(kws, Lists.newArrayList(), false, timestamp, null);
             
         }
         if (!hiddenKws.isEmpty()) {
@@ -474,15 +474,6 @@ public class PumpEffect extends SpellAbilityEffect {
             List<String> affectedKeywords = Lists.newArrayList(keywords);
 
             if (!affectedKeywords.isEmpty()) {
-                Iterables.removeIf(affectedKeywords, input -> {
-                    if (input.contains("CardManaCost")) {
-                        if (tgtC.getManaCost().isNoCost()) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
-
                 affectedKeywords = Lists.transform(affectedKeywords, input -> {
                     if (input.contains("CardManaCost")) {
                         input = input.replace("CardManaCost", tgtC.getManaCost().getShortString());

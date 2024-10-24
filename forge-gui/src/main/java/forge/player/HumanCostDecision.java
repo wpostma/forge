@@ -992,7 +992,7 @@ public class HumanCostDecision extends CostDecisionMakerBase {
                 cType = getController().chooseCounterType(Lists.newArrayList(cmap.keySet()), sa, prompt, null);
             }
 
-            if (cType == null) {
+            if (cType == null || !c.canRemoveCounters(cType)) {
                 return false;
             }
 
@@ -1308,7 +1308,7 @@ public class HumanCostDecision extends CostDecisionMakerBase {
     public PaymentDecision visit(final CostUntapType cost) {
         CardCollection typeList = CardLists.getValidCards(player.getGame().getCardsIn(ZoneType.Battlefield), cost.getType().split(";"),
                 player, source, ability);
-        typeList = CardLists.filter(typeList, Presets.TAPPED);
+        typeList = CardLists.filter(typeList, Presets.TAPPED, c -> c.getCounters(CounterEnumType.STUN) == 0 || c.canRemoveCounters(CounterType.get(CounterEnumType.STUN)));
         if (!cost.canUntapSource) {
             typeList.remove(source);
         }
@@ -1330,9 +1330,20 @@ public class HumanCostDecision extends CostDecisionMakerBase {
 
     @Override
     public PaymentDecision visit(final CostUnattach cost) {
-        final Card cardToUnattach = cost.findCardToUnattach(source, player, ability);
-        if (cardToUnattach != null && confirmAction(cost, Localizer.getInstance().getMessage("lblUnattachCardConfirm", CardTranslation.getTranslatedName(cardToUnattach.getName())))) {
-            return PaymentDecision.card(cardToUnattach);
+        final CardCollection cardToUnattach = cost.findCardToUnattach(source, player, ability);
+        if (cardToUnattach.size() == 1 && confirmAction(cost, Localizer.getInstance().getMessage("lblUnattachCardConfirm", CardTranslation.getTranslatedName(cardToUnattach.getFirst().getName())))) {
+            return PaymentDecision.card(cardToUnattach.getFirst());
+        }
+        if (cardToUnattach.size() > 1) {
+            int c = cost.getAbilityAmount(ability);
+            final InputSelectCardsFromList inp = new InputSelectCardsFromList(controller, c, c, cardToUnattach, ability);
+            inp.setCancelAllowed(true);
+            inp.setMessage(Localizer.getInstance().getMessage("lblUnattachCardConfirm", cost.getDescriptiveType()));
+            inp.showAndWait();
+            if (inp.hasCancelled() || inp.getSelected().size() != c) {
+                return null;
+            }
+            return PaymentDecision.card(inp.getSelected());
         }
         return null;
     }
@@ -1341,6 +1352,7 @@ public class HumanCostDecision extends CostDecisionMakerBase {
     public boolean paysRightAfterDecision() {
         return true;
     }
+
     private boolean confirmAction(CostPart costPart, String message) {
         CardView cardView = ability.getCardView();
         if (GuiBase.getInterface().isLibgdxPort()) {

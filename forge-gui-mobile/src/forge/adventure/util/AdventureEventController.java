@@ -7,10 +7,11 @@ import forge.adventure.player.AdventurePlayer;
 import forge.adventure.pointofintrest.PointOfInterestChanges;
 import forge.deck.Deck;
 import forge.item.PaperCard;
-import forge.item.SealedProduct;
+import forge.item.SealedTemplate;
 import forge.item.generation.BoosterGenerator;
 import forge.item.generation.UnOpenedProduct;
 import forge.model.CardBlock;
+import forge.model.FModel;
 import forge.util.Aggregates;
 
 import java.io.Serializable;
@@ -136,7 +137,8 @@ public class AdventureEventController implements Serializable {
         List<PaperCard> cards = BoosterGenerator.getBoosterPack(StaticData.instance().getBoosters().get(setCode));
         Deck output = new Deck();
         output.getMain().add(cards);
-        output.setName("Booster Pack: " + setCode);
+        String editionName = FModel.getMagicDb().getEditions().get(setCode).getName();
+        output.setName(editionName + " Booster");
         output.setComment(setCode);
         return output;
     }
@@ -145,7 +147,7 @@ public class AdventureEventController implements Serializable {
         //Get all candidates then remove at random until no more than count are included
         //This will prevent duplicate choices within a round of a Jumpstart draft
         List<Deck> packsAsDecks = new ArrayList<>();
-        for(SealedProduct.Template template : StaticData.instance().getSpecialBoosters())
+        for(SealedTemplate template : StaticData.instance().getSpecialBoosters())
         {
             if (!template.getEdition().contains(block.getLandSet().getCode()))
                 continue;
