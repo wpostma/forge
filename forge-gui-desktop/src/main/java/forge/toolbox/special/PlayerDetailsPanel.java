@@ -237,7 +237,7 @@ public class PlayerDetailsPanel extends JPanel {
         }
 
         public void setToolTip(final String... args) {
-            super.setToolTipText(String.format(tooltip, args));
+            super.setToolTipText(String.format(tooltip, (java.lang.Object[])args));
         }
 
         @Override

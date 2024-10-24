@@ -36,7 +36,7 @@ import io.sentry.Sentry;
 
 /*
 
-IDE launch parameters : JDK 17+
+JVM Parameters : JDK 17+
 
 -Xms768m
 -XX:+UseParallelGC
