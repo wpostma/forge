@@ -22,7 +22,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jupnp.DefaultUpnpServiceConfiguration;
 import org.jupnp.UpnpServiceConfiguration;
 
@@ -54,6 +53,7 @@ import forge.toolbox.FOptionPane;
 import forge.toolbox.FSkin;
 import forge.toolbox.FSkin.SkinImage;
 import forge.util.BuildInfo;
+import forge.util.DirectoryLocator;
 import forge.util.FSerializableFunction;
 import forge.util.FileUtil;
 import forge.util.ImageFetcher;
@@ -85,9 +85,12 @@ public class GuiDesktop implements IGuiBase {
 
     @Override
     public String getAssetsDir() {
-        return StringUtils.containsIgnoreCase(BuildInfo.getVersionString(), "git") ?
-                // FIXME: replace this hardcoded value!!
-                "../forge-gui/" : "";
+        try {
+            return DirectoryLocator.locateForgeAssetsDir();
+        }
+        catch (final Throwable ignored) {
+            return "";
+        }
     }
 
     @Override
@@ -253,7 +256,31 @@ public class GuiDesktop implements IGuiBase {
 
     @Override
     public void showBugReportDialog(final String title, final String text, final boolean showExitAppBtn) {
+        System.err.println("GuiDesktop: entering showBugReportDialog, title=\"" + title + "\", exitButton=" + showExitAppBtn);
         BugReportDialog.show(title, text, showExitAppBtn);
+        System.err.println("GuiDesktop: BugReportDialog.show returned.");
+    }
+
+    @Override
+    public void dismissSplashScreen() {
+        final Runnable dismiss = () -> {
+            System.err.println("GuiDesktop: dismissSplashScreen runnable executing.");
+            if (Singletons.getView() != null && Singletons.getView().getSplash() != null) {
+                System.err.println("GuiDesktop: disposing visible splash frame.");
+                Singletons.getView().getSplash().dispose();
+            }
+            else {
+                System.err.println("GuiDesktop: no splash frame present to dispose.");
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            System.err.println("GuiDesktop: dismissSplashScreen already on EDT.");
+            dismiss.run();
+        }
+        else {
+            System.err.println("GuiDesktop: scheduling dismissSplashScreen on EDT.");
+            SwingUtilities.invokeLater(dismiss);
+        }
     }
 
     @Override

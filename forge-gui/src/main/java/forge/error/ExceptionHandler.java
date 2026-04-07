@@ -19,6 +19,7 @@
 package forge.error;
 
 import forge.FTrace;
+import forge.gui.GuiBase;
 import forge.gui.error.BugReporter;
 import forge.localinstance.properties.ForgeConstants;
 import forge.util.MultiplexOutputStream;
@@ -59,9 +60,13 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
             logFile = new File(pathname);
         }
         
+        logFileStream = null;
         if (!logFile.exists()) {
             try {
-                logFile.getParentFile().mkdirs();
+                final File parent = logFile.getParentFile();
+                if (parent != null) {
+                    parent.mkdirs();
+                }
                 logFile.createNewFile();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -76,9 +81,14 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
         }
 
         oldSystemOut = System.out;
-        System.setOut(new PrintStream(new MultiplexOutputStream(System.out, logFileStream), true));
         oldSystemErr = System.err;
-        System.setErr(new PrintStream(new MultiplexOutputStream(System.err, logFileStream), true));
+        if (logFileStream != null) {
+            System.setOut(new PrintStream(new MultiplexOutputStream(System.out, logFileStream), true));
+            System.setErr(new PrintStream(new MultiplexOutputStream(System.err, logFileStream), true));
+        }
+        else {
+            System.err.println("Unable to open log file: " + logFile.getAbsolutePath());
+        }
 
         // no logger here, if it ever fails we'll know at least we passed through here
         System.out.println("Error handling registered!");
@@ -93,13 +103,25 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
         FTrace.dump(); //dump trace before unregistering error handling
         System.setOut(oldSystemOut);
         System.setErr(oldSystemErr);
-        logFileStream.close();
+        if (logFileStream != null) {
+            logFileStream.close();
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     public final void uncaughtException(final Thread t, final Throwable ex) {
-        BugReporter.reportException(ex);
+        System.err.println("Uncaught exception on thread \"" + t.getName() + "\"");
+        ex.printStackTrace();
+        dismissSplashScreen();
+        try {
+            BugReporter.reportException(ex);
+        }
+        catch (final Throwable reportingFailure) {
+            System.err.println("Failed while reporting an uncaught exception.");
+            System.err.println("Secondary exception from bug reporter:");
+            reportingFailure.printStackTrace();
+        }
     }
 
     /**
@@ -110,6 +132,28 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
      *            a {@link java.lang.Throwable} object.
      */
     public final void handle(final Throwable ex) {
-        BugReporter.reportException(ex);
+        System.err.println("Uncaught AWT exception");
+        ex.printStackTrace();
+        dismissSplashScreen();
+        try {
+            BugReporter.reportException(ex);
+        }
+        catch (final Throwable reportingFailure) {
+            System.err.println("Failed while reporting an AWT exception.");
+            System.err.println("Secondary exception from bug reporter:");
+            reportingFailure.printStackTrace();
+        }
+    }
+
+    private void dismissSplashScreen() {
+        try {
+            if (GuiBase.getInterface() != null) {
+                GuiBase.getInterface().dismissSplashScreen();
+            }
+        }
+        catch (final Throwable splashFailure) {
+            System.err.println("Failed to dismiss splash screen.");
+            splashFailure.printStackTrace();
+        }
     }
 }

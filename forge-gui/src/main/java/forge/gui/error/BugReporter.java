@@ -38,12 +38,15 @@ import java.time.format.DateTimeFormatter;
  */
 public class BugReporter {
     private static final int STACK_OVERFLOW_MAX_MESSAGE_LEN = 16 * 1024;
-
-    public static final String REPORT = Localizer.getInstance().getMessage("lblReport");
-    public static final String SAVE = Localizer.getInstance().getMessage("lblSave");
-    public static final String DISCARD = Localizer.getInstance().getMessage("lblDiscardError");
-    public static final String EXIT = Localizer.getInstance().getMessage("lblExit");
-    public static final String SENTRY = Localizer.getInstance().getMessage("lblAutoSubmitBugReports");
+    private static final String DEFAULT_REPORT = "Report";
+    private static final String DEFAULT_SAVE = "Save";
+    private static final String DEFAULT_DISCARD = "Discard";
+    private static final String DEFAULT_EXIT = "Exit";
+    private static final String DEFAULT_SENTRY = "Automatically submit bug reports";
+    private static final String DEFAULT_REPORT_CRASH = "Report a Crash";
+    private static final String DEFAULT_REPORT_BUG = "Report a Bug";
+    private static final String DEFAULT_SAVE_ERROR_MESSAGE = "There was an error while saving: {0}";
+    private static final String DEFAULT_SAVE_ERROR_TITLE = "Error Saving File";
 
     private static Throwable exception;
     private static String message;
@@ -85,15 +88,18 @@ public class BugReporter {
         else {
             sb.append(swStr);
         }
+        System.err.println("BugReporter: prepared crash report text (" + sb.length() + " chars).");
         if (isSentryEnabled()) {
+            System.err.println("BugReporter: Sentry is enabled, sending report.");
             sendSentry();
         } else {
-            GuiBase.getInterface().showBugReportDialog(Localizer.getInstance().getMessageorUseDefault("lblReportCrash", "Report a Crash"), sb.toString(), true);
+            System.err.println("BugReporter: Sentry disabled, attempting to show bug report dialog.");
+            showBugReportDialog(getReportCrashLabel(), sb.toString(), true);
         }
     }
 
     public static boolean isSentryEnabled() {
-        return FModel.getPreferences().getPrefBoolean(ForgePreferences.FPref.USE_SENTRY);
+        return FModel.getPreferences() != null && FModel.getPreferences().getPrefBoolean(ForgePreferences.FPref.USE_SENTRY);
     }
     /**
      * Alias for reportException(ex, null).
@@ -123,7 +129,7 @@ public class BugReporter {
         if (isSentryEnabled()) {
             sendSentry();
         } else {
-            GuiBase.getInterface().showBugReportDialog(Localizer.getInstance().getMessageorUseDefault("btnReportBug", "Report a Bug"), message, false);
+            showBugReportDialog(getReportBugLabel(), message, false);
         }
     }
 
@@ -149,11 +155,15 @@ public class BugReporter {
             f = GuiBase.getInterface().getSaveFile(f);
         }
 
+        if (f == null) {
+            return;
+        }
+
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(f))){
             bw.write(text);
         } catch (final IOException ex) {
-            SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblThereErrorWasDuringSaving", ex),
-            Localizer.getInstance().getMessage("lblErrorSavingFile"), SOptionPane.ERROR_ICON);
+            SOptionPane.showMessageDialog(getLocalized("lblThereErrorWasDuringSaving", DEFAULT_SAVE_ERROR_MESSAGE, ex),
+            getLocalized("lblErrorSavingFile", DEFAULT_SAVE_ERROR_TITLE), SOptionPane.ERROR_ICON);
         }
     }
 
@@ -171,5 +181,62 @@ public class BugReporter {
      * Private constructor to prevent instantiation.
      */
     private BugReporter() {
+    }
+
+    public static String getReportLabel() {
+        return getLocalized("lblReport", DEFAULT_REPORT);
+    }
+
+    public static String getSaveLabel() {
+        return getLocalized("lblSave", DEFAULT_SAVE);
+    }
+
+    public static String getDiscardLabel() {
+        return getLocalized("lblDiscardError", DEFAULT_DISCARD);
+    }
+
+    public static String getExitLabel() {
+        return getLocalized("lblExit", DEFAULT_EXIT);
+    }
+
+    public static String getSentryLabel() {
+        return getLocalized("lblAutoSubmitBugReports", DEFAULT_SENTRY);
+    }
+
+    public static String getReportCrashLabel() {
+        return getLocalized("lblReportCrash", DEFAULT_REPORT_CRASH);
+    }
+
+    public static String getReportBugLabel() {
+        return getLocalized("btnReportBug", DEFAULT_REPORT_BUG);
+    }
+
+    private static String getLocalized(final String key, final String defaultValue, final Object... messageArguments) {
+        try {
+            return Localizer.getInstance().getMessageorUseDefault(key, defaultValue, messageArguments);
+        }
+        catch (final Exception ex) {
+            return defaultValue;
+        }
+    }
+
+    private static void showBugReportDialog(final String title, final String text, final boolean showExitAppBtn) {
+        try {
+            if (GuiBase.getInterface() != null) {
+                System.err.println("BugReporter: forwarding bug report dialog to GUI interface " + GuiBase.getInterface().getClass().getName());
+                GuiBase.getInterface().showBugReportDialog(title, text, showExitAppBtn);
+                System.err.println("BugReporter: GUI interface returned from showBugReportDialog.");
+                return;
+            }
+            System.err.println("BugReporter: no GUI interface available, falling back to stderr.");
+        }
+        catch (final Throwable dialogFailure) {
+            System.err.println("Failed to display bug report dialog.");
+            dialogFailure.printStackTrace();
+        }
+
+        System.err.println("BugReporter: stderr fallback follows.");
+        System.err.println(title);
+        System.err.println(text);
     }
 }

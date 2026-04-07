@@ -31,10 +31,10 @@ public class BugReportDialog extends FScreen { //use screen rather than dialog s
 
     private final FTextArea lblHeader = add(new FTextArea(false, "Report Bug"));
     private final TemplateView tvDetails;
-    private final FButton btnReport = add(new FButton(BugReporter.REPORT));
-    private final FButton btnSave = add(new FButton(BugReporter.SAVE));
-    private final FButton btnDiscard = add(new FButton(BugReporter.DISCARD));
-    private final FButton btnExit = add(new FButton(BugReporter.EXIT));
+    private final FButton btnReport = add(new FButton(BugReporter.getReportLabel()));
+    private final FButton btnSave = add(new FButton(BugReporter.getSaveLabel()));
+    private final FButton btnDiscard = add(new FButton(BugReporter.getDiscardLabel()));
+    private final FButton btnExit = add(new FButton(BugReporter.getExitLabel()));
 
     private BugReportDialog(String title, String text0, boolean showExitAppBtn) {
         super(title);

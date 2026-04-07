@@ -35,6 +35,7 @@ public interface IGuiBase {
     ISkinImage getCardArt(PaperCard card, boolean backFace);
     ISkinImage createLayeredImage(PaperCard card, FSkinProp background, String overlayFilename, float opacity);
     void showBugReportDialog(String title, String text, boolean showExitAppBtn);
+    default void dismissSplashScreen() {}
     void showImageDialog(ISkinImage image, String message, String title);
     int showOptionDialog(String message, String title, FSkinProp icon, List<String> options, int defaultOption);
     String showInputDialog(String message, String title, FSkinProp icon, String initialInput, List<String> inputOptions, boolean isNumeric);
