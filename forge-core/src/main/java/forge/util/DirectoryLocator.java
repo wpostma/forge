@@ -32,7 +32,7 @@ public final class DirectoryLocator {
                 + ", directoryName=" + directoryName
                 + ", requiredRelativePaths=" + Arrays.toString(requiredRelativePaths)
                 + ", maximumLevelsUp=" + maximumLevelsUp
-                + ". Try running Forge from the repo root, from the forge-gui folder, or from a child folder under the repo root.";
+                + ". Try running Forge from where it was installed, or for developer copies, from a folder close to the res folder.";
         System.err.println("DirectoryLocator: unable to locate required directory.");
         System.err.println(message);
         throw new RuntimeException(message);
