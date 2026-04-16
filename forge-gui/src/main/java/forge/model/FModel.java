@@ -165,8 +165,10 @@ public final class FModel {
             throw new RuntimeException(exn);
         }
 
+        final String assetsDirectory = DirectoryLocator.locateForgeAssetsDir();
+        final String languagesDirectory = assetsDirectory + "res" + File.separator + "languages" + File.separator;
         Lang.createInstance(getPreferences().getPref(FPref.UI_LANGUAGE));
-        Localizer.getInstance().initialize(getPreferences().getPref(FPref.UI_LANGUAGE), ForgeConstants.LANG_DIR);
+        Localizer.getInstance().initialize(getPreferences().getPref(FPref.UI_LANGUAGE), languagesDirectory);
 
         final ProgressObserver progressBarBridge = (progressBar == null) ?
                 ProgressObserver.emptyObserver : new ProgressObserver() {
@@ -211,7 +213,7 @@ public final class FModel {
         }
 
         // Do this first so PaperCards see the real preference
-        CardTranslation.preloadTranslation(preferences.getPref(FPref.UI_LANGUAGE), ForgeConstants.LANG_DIR);
+        CardTranslation.preloadTranslation(preferences.getPref(FPref.UI_LANGUAGE), languagesDirectory);
 
         // Create profile dirs if they don't already exist
         for (final String dname : ForgeConstants.PROFILE_DIRS) {

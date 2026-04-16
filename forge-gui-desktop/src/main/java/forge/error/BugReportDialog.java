@@ -17,6 +17,7 @@
  */
 package forge.error;
 
+import java.awt.Frame;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Toolkit;
@@ -36,7 +37,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 
+import forge.Singletons;
 import forge.gui.WrapLayout;
 import forge.gui.error.BugReporter;
 import forge.localinstance.properties.ForgePreferences;
@@ -53,7 +56,32 @@ public class BugReportDialog {
     private static boolean dialogShown;
 
     public static void show(String title, String text, boolean showExitAppBtn) {
-        if (dialogShown) { return; }
+        System.err.println("BugReportDialog: show invoked on thread \"" + Thread.currentThread().getName() + "\"");
+        if (!SwingUtilities.isEventDispatchThread()) {
+            System.err.println("BugReportDialog: not on EDT, invoking and waiting.");
+            try {
+                SwingUtilities.invokeAndWait(() -> show(title, text, showExitAppBtn));
+            }
+            catch (final Exception e) {
+                System.err.println("BugReportDialog: invokeAndWait failed.");
+                throw new RuntimeException(e);
+            }
+            return;
+        }
+
+        System.err.println("BugReportDialog: running on EDT.");
+        if (dialogShown) {
+            System.err.println("BugReportDialog: dialog already shown, skipping.");
+            return;
+        }
+
+        if (Singletons.getView() != null && Singletons.getView().getSplash() != null) {
+            System.err.println("BugReportDialog: disposing splash before showing dialog.");
+            Singletons.getView().getSplash().dispose();
+        }
+        else {
+            System.err.println("BugReportDialog: no splash to dispose.");
+        }
 
         JTextArea area = new JTextArea(text);
         area.setFont(new Font("Monospaced", Font.PLAIN, 10));
@@ -72,20 +100,25 @@ public class BugReportDialog {
         options.add(new JButton(new _Report()));
         // option to enable automatic Sentry submission
         options.add(new JCheckBox(new _ActivateSentry()));
-        options.add(new JLabel(BugReporter.SENTRY));
+        options.add(new JLabel(BugReporter.getSentryLabel()));
         options.add(new JButton(new _SaveAction(area)));
-        options.add(BugReporter.DISCARD);
+        options.add(BugReporter.getDiscardLabel());
         if (showExitAppBtn) {
             options.add(new JButton(new _ExitAction()));
         }
 
         JOptionPane pane = new JOptionPane(p, JOptionPane.PLAIN_MESSAGE,
                 JOptionPane.DEFAULT_OPTION, null, options.toArray(), options.get(0));
-        JDialog dlg = pane.createDialog(JOptionPane.getRootFrame(), title);
+        final Frame owner = Singletons.getView() == null ? null : Singletons.getView().getFrame();
+        System.err.println("BugReportDialog: owner is " + (owner == null ? "null" : owner.getClass().getName() + ", displayable=" + owner.isDisplayable()));
+        JDialog dlg = pane.createDialog(owner != null && owner.isDisplayable() ? owner : null, title);
         dlg.setSize(showExitAppBtn ? 780 : 600, 400);
         dlg.setResizable(true);
+        dlg.setAlwaysOnTop(true);
         dialogShown = true;
+        System.err.println("BugReportDialog: about to show modal dialog.");
         dlg.setVisible(true);
+        System.err.println("BugReportDialog: modal dialog closed.");
         dlg.dispose();
         dialogShown = false;
     }
@@ -106,7 +139,7 @@ public class BugReportDialog {
     private static class _Report extends AbstractAction {
 
         public _Report() {
-            super(BugReporter.REPORT);
+            super(BugReporter.getReportLabel());
             this.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_R, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         }
 
@@ -122,7 +155,7 @@ public class BugReportDialog {
         private final JTextArea area;
 
         public _SaveAction(final JTextArea areaParam) {
-            super(BugReporter.SAVE);
+            super(BugReporter.getSaveLabel());
             this.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
             this.area = areaParam;
         }
@@ -136,7 +169,7 @@ public class BugReportDialog {
     @SuppressWarnings("serial")
     private static class _ExitAction extends AbstractAction {
         public _ExitAction() {
-            super(BugReporter.EXIT);
+            super(BugReporter.getExitLabel());
             this.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
         }
 
