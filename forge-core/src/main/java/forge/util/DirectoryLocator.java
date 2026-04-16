@@ -42,10 +42,11 @@ public final class DirectoryLocator {
         return locateDirectoryFrom(
                 ".",
                 "forge-gui",
-                2,
+                6,
                 "res" + File.separator + "languages" + File.separator + "en-US.properties",
                 "res" + File.separator + "cardsfolder",
-                "res" + File.separator + "editions"
+                "res" + File.separator + "editions",
+                "res" + File.separator + "skins" + File.separator + "default" + File.separator + "bg_splash.png"
         );
     }
 
