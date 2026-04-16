@@ -35,7 +35,7 @@ import forge.util.TextUtil;
  * Loads preferred values when instantiated.
  * If a requested value is not present, default is returned.
  */
-public abstract class PreferencesStore<T extends Enum<T>> {
+public abstract class PreferencesStore<T extends Enum<T> & PreferencesStore.IPref> {
     private final Map<T, String> preferenceValues;
     private final String filename;
 
@@ -113,9 +113,9 @@ public abstract class PreferencesStore<T extends Enum<T>> {
     }
 
     public final int getPrefInt(final T fp0) {
-        try{
+        try {
             return Integer.parseInt(getPref(fp0));
-        } catch(NumberFormatException e) {
+        } catch (NumberFormatException e) {
             return Integer.parseInt(getPrefDefault(fp0));
         }
     }
@@ -127,6 +127,7 @@ public abstract class PreferencesStore<T extends Enum<T>> {
     public final double getPrefDouble(final T fp0) {
         return Double.parseDouble(getPref(fp0));        
     }
+
     public void setGameType(final T q0, final Set<GameType> gameTypes) {
         String s0 = "";
         Set<String> e = new HashSet<>();
@@ -173,5 +174,9 @@ public abstract class PreferencesStore<T extends Enum<T>> {
             result.add(GameType.Archenemy);
         else if (gameType.equals("Archenemy Rumble"))
             result.add(GameType.ArchenemyRumble);
+    }
+
+    public interface IPref  {
+        String getDefault(); // Common method for getting the default value
     }
 }

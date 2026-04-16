@@ -2,6 +2,7 @@ package forge.itemmanager.views;
 
 import forge.ImageCache;
 import forge.card.ColorSet;
+import forge.deck.Deck;
 import forge.deck.DeckProxy;
 import forge.deck.io.DeckPreferences;
 import forge.game.card.Card;
@@ -591,10 +592,12 @@ public class ImageView<T extends InventoryItem> extends ItemView<T> {
                 Map<Comparable<?>, Pile> piles = new TreeMap<>();
                 for (ItemInfo itemInfo : group.items) {
                     Comparable<?> key = groupPileBy.fnSort.apply(itemInfo);
-                    if (!piles.containsKey(key)) {
+                    if (key != null && !piles.containsKey(key)) {
                         piles.put(key, new Pile());
                     }
-                    piles.get(key).items.add(itemInfo);
+                    Pile p = key == null ? null : piles.getOrDefault(key, null);
+                    if (p != null)
+                        p.items.add(itemInfo);
                 }
                 group.piles.clear();
                 group.piles.addAll(piles.values());
@@ -1213,7 +1216,7 @@ public class ImageView<T extends InventoryItem> extends ItemView<T> {
                 g.setColor(Color.white);
                 Shape clip = g.getClip();
                 g.setClip(bounds);
-                g.drawString(item.getName(), bounds.x + 10, bounds.y + 20);
+                g.drawString(item.getDisplayName(), bounds.x + 10, bounds.y + 20);
                 g.setClip(clip);
             }
 
@@ -1233,6 +1236,10 @@ public class ImageView<T extends InventoryItem> extends ItemView<T> {
                     }
                     CardPanel.drawFoilEffect(g, card, bounds.x, bounds.y, bounds.width, bounds.height, borderSize);
                 }
+                
+                // Draw key card indicator if applicable
+                drawKeyCardIndicator(g, (PaperCard) paperCard, bounds);
+                
                 //draw draft ranking
                 if (showRanking && FModel.getPreferences().getPrefBoolean(ForgePreferences.FPref.UI_OVERLAY_DRAFT_RANKING)) {
                     double score = CardRanker.getRawScore((PaperCard) item);
@@ -1259,6 +1266,24 @@ public class ImageView<T extends InventoryItem> extends ItemView<T> {
                     g.drawString(value, x-w/2, y);
                     g.setClip(clip);
                 }
+            }
+        }
+
+        private void drawKeyCardIndicator(Graphics g, PaperCard card, Rectangle bounds) {
+            try {
+                final Deck currentDeck = (Deck) CDeckEditorUI.SINGLETON_INSTANCE.getCurrentEditorController().getDeckController().getModel();
+                
+                if (currentDeck != null && currentDeck.isKeyCard(card.getName())) {
+                    g.setColor(Color.yellow);
+                    g.setFont(g.getFont().deriveFont(Font.BOLD, 14f));
+                    FontMetrics fm = g.getFontMetrics();
+                    String indicator = "⭐";
+                    int x = bounds.x + bounds.width - fm.stringWidth(indicator) - 3;
+                    int y = bounds.y + fm.getAscent() + 3;
+                    g.drawString(indicator, x, y);
+                }
+            } catch (Exception e) {
+                // Silently ignore if deck context is not available
             }
         }
     }

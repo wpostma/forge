@@ -2,8 +2,8 @@ package forge;
 
 import com.badlogic.gdx.Application.ApplicationType;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.graphics.Texture;
-import com.google.common.base.Function;
 import forge.adventure.stage.MapStage;
 import forge.assets.*;
 import forge.card.CardRenderer;
@@ -12,6 +12,7 @@ import forge.deck.FDeckViewer;
 import forge.error.BugReportDialog;
 import forge.gamemodes.match.HostedMatch;
 import forge.gui.FThreads;
+import forge.gui.GuiBase;
 import forge.gui.download.GuiDownloadService;
 import forge.gui.interfaces.IGuiBase;
 import forge.gui.interfaces.IGuiGame;
@@ -32,19 +33,31 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Consumer;
+
+import org.jupnp.DefaultUpnpServiceConfiguration;
+import org.jupnp.UpnpServiceConfiguration;
 
 public class GuiMobile implements IGuiBase {
     private final String assetsDir;
-    private ImageFetcher imageFetcher = new LibGDXImageFetcher();
-    private List<Integer> integerChoices = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    private final ImageFetcher imageFetcher = new LibGDXImageFetcher();
+    private final List<Integer> integerChoices = Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 
     public GuiMobile(final String assetsDir0) {
         assetsDir = assetsDir0;
     }
 
     @Override
+    public UpnpServiceConfiguration getUpnpPlatformService() {
+        if (GuiBase.isAndroid()) {
+            return Forge.getDeviceAdapter().getUpnpPlatformService();
+        }
+        return new DefaultUpnpServiceConfiguration();
+    }
+
+    @Override
     public boolean isRunningOnDesktop() {
-        return Gdx.app==null ? true : Gdx.app.getType() == ApplicationType.Desktop;
+        return Gdx.app == null || Gdx.app.getType() == ApplicationType.Desktop;
     }
 
     @Override
@@ -136,13 +149,13 @@ public class GuiMobile implements IGuiBase {
                 if (FileUtil.doesFileExist(overlayFilename)) {
                     try {
                         final Texture overlay = Forge.getAssets().getTexture(Gdx.files.absolute(overlayFilename));
-                        g.drawImage(overlay, (background.getWidth() - overlay.getWidth()) / 2, (background.getHeight() - overlay.getHeight()) / 2, overlay.getWidth(), overlay.getHeight());
-                    } catch (final Exception e) {
+                        g.drawImage(overlay, (background.getWidth() - overlay.getWidth()) / 2f, (background.getHeight() - overlay.getHeight()) / 2f, overlay.getWidth(), overlay.getHeight());
+                    } catch (Exception ignored) {
                     }
                 } else if (paperCard != null) {
-                    Texture cardImage = ImageCache.getImage(paperCard.getCardImageKey(), false);
+                    Texture cardImage = ImageCache.getInstance().getImage(paperCard.getCardImageKey(), false);
                     if (cardImage != null)
-                        g.drawCardRoundRect(cardImage, null, (background.getWidth() - cardImageWidth) / 2, (background.getHeight() - cardImageHeight) / 3.8f, cardImageWidth, cardImageHeight, false, false);
+                        g.drawCardRoundRect(cardImage, null, (background.getWidth() - cardImageWidth) / 2, (background.getHeight() - cardImageHeight) / 3.8f, cardImageWidth, cardImageHeight, false, false, paperCard.isFoil());
                 }
 
                 Gdx.graphics.requestRendering(); //ensure image appears right away
@@ -185,7 +198,7 @@ public class GuiMobile implements IGuiBase {
     }
 
     @Override
-    public <T> List<T> getChoices(final String message, final int min, final int max, final Collection<T> choices, final T selected, final Function<T, String> display) {
+    public <T> List<T> getChoices(final String message, final int min, final int max, final Collection<T> choices, final Collection<T> selected, final FSerializableFunction<T, String> display) {
         return new WaitCallback<List<T>>() {
             @Override
             public void run() {
@@ -270,7 +283,7 @@ public class GuiMobile implements IGuiBase {
     }
 
     @Override
-    public void download(final GuiDownloadService service, final Callback<Boolean> callback) {
+    public void download(final GuiDownloadService service, final Consumer<Boolean> callback) {
         new GuiDownloader(service, callback).show();
     }
 
@@ -290,8 +303,13 @@ public class GuiMobile implements IGuiBase {
     }
 
     @Override
+    public boolean isSupportedAudioFormat(File file) {
+        return Forge.getDeviceAdapter().isSupportedAudioFormat(file);
+    }
+
+    @Override
     public IAudioClip createAudioClip(final String filename) {
-        return AudioClip.createClip(SoundSystem.instance.getSoundDirectory() + filename);
+        return AudioClip.createClip(SoundSystem.instance.getSoundResource(filename));
     }
 
     @Override
@@ -306,7 +324,7 @@ public class GuiMobile implements IGuiBase {
 
     @Override
     public void clearImageCache() {
-        ImageCache.clear();
+        ImageCache.getInstance().clear();
         ImageKeys.clearMissingCards();
     }
 
@@ -346,7 +364,31 @@ public class GuiMobile implements IGuiBase {
     }
 
     @Override
+    public boolean hasNetGame() {
+        return MatchController.instance.isNetGame();
+    }
+
+    @Override
     public float getScreenScale() {
         return 1f;
+    }
+
+    @Override
+    public void vibrate(int milliseconds, int amplitude) {
+        if (milliseconds > 0 && amplitude > 0 && Gdx.app.getType() != ApplicationType.Desktop) {
+            Gdx.input.vibrate(milliseconds, amplitude, true);
+        }
+    }
+
+    @Override
+    public void vibrateController(int milliseconds, float amplitude) {
+        if (milliseconds > 0 && Controllers.getCurrent() != null && Controllers.getCurrent().canVibrate()) {
+            Controllers.getCurrent().startVibration(milliseconds, amplitude);
+        }
+    }
+
+    @Override
+    public boolean useControllerForHaptics() {
+        return Forge.hasGamepad() && Forge.lastInputWasController();
     }
 }

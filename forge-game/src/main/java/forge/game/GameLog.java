@@ -21,8 +21,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Observable;
-
-import forge.game.event.IGameEventVisitor;
+import java.util.Set;
 
 /**
  * <p>
@@ -37,8 +36,6 @@ public class GameLog extends Observable implements Serializable {
     private final List<GameLogEntry> log = new ArrayList<>();
 
     private final transient GameLogFormatter formatter = new GameLogFormatter(this);
-    
-    private final boolean quiet = false;
 
     /** Logging level:
      * 0 - Turn
@@ -56,8 +53,6 @@ public class GameLog extends Observable implements Serializable {
     }
 
     void add(GameLogEntry entry) {
-        if (quiet) return;
-
         log.add(entry);
         this.setChanged();
         this.notifyObservers();
@@ -74,7 +69,22 @@ public class GameLog extends Observable implements Serializable {
     
         for (int i = log.size() - 1; i >= 0; i--) {
             GameLogEntry le = log.get(i);
-            if (logLevel == null || le.type.compareTo(logLevel) <= 0) {
+            if (logLevel == null || le.type().compareTo(logLevel) <= 0) {
+                result.add(le);
+            }
+        }
+        return result;
+    }
+
+    public List<GameLogEntry> getLogEntriesForVerbosity(final GameLogVerbosity verbosity) {
+        return getLogEntriesForTypes(verbosity.getIncludedTypes());
+    }
+
+    public List<GameLogEntry> getLogEntriesForTypes(final Set<GameLogEntryType> types) {
+        final List<GameLogEntry> result = new ArrayList<>();
+        for (int i = log.size() - 1; i >= 0; i--) {
+            GameLogEntry le = log.get(i);
+            if (types.contains(le.type())) {
                 result.add(le);
             }
         }
@@ -86,14 +96,14 @@ public class GameLog extends Observable implements Serializable {
     
         for (int i = log.size() - 1; i >= 0; i--) {
             GameLogEntry le = log.get(i);
-            if (logLevel == null || le.type.compareTo(logLevel) == 0) {
+            if (logLevel == null || le.type().compareTo(logLevel) == 0) {
                 result.add(le);
             }
         }
         return result;
     }
-    
-    public IGameEventVisitor<?> getEventVisitor() {
+
+    public GameLogFormatter getEventVisitor() {
         return formatter;
     }
 }

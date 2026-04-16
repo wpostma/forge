@@ -3,6 +3,7 @@ package forge.screens.home.online;
 import java.net.BindException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.swing.JMenu;
 import javax.swing.SwingUtilities;
@@ -16,12 +17,14 @@ import forge.gui.error.BugReporter;
 import forge.gui.framework.EDocID;
 import forge.gui.framework.ICDoc;
 import forge.gui.util.SOptionPane;
+import forge.localinstance.properties.ForgeConstants;
 import forge.menus.IMenuProvider;
 import forge.menus.MenuUtil;
 import forge.screens.home.CHomeUI;
 import forge.screens.home.CLobby;
 import forge.screens.home.VLobby;
 import forge.screens.home.sanctioned.ConstructedGameMenu;
+import forge.toolbox.FOptionPane;
 import forge.util.Localizer;
 
 public enum CSubmenuOnlineLobby implements ICDoc, IMenuProvider {
@@ -39,7 +42,7 @@ public enum CSubmenuOnlineLobby implements ICDoc, IMenuProvider {
         if (url == null) { return; }
 
         FThreads.invokeInBackgroundThread(() -> {
-            if (url.length() > 0) {
+            if (!url.isEmpty()) {
                 join(url);
             }
             else {
@@ -83,16 +86,29 @@ public enum CSubmenuOnlineLobby implements ICDoc, IMenuProvider {
         });
 
         final ChatMessage result = NetConnectUtil.join(url, VSubmenuOnlineLobby.SINGLETON_INSTANCE, FNetOverlay.SINGLETON_INSTANCE);
-
-        SwingUtilities.invokeLater(() -> {
+        String message = result.getMessage();
+        if(Objects.equals(message, ForgeConstants.CLOSE_CONN_COMMAND)) {
+            FOptionPane.showErrorDialog(Localizer.getInstance().getMessage("UnableConnectToServer", url));
             SOverlayUtils.hideOverlay();
-            if (result instanceof ChatMessage) {
-                FNetOverlay.SINGLETON_INSTANCE.show(result);
-                if (CHomeUI.SINGLETON_INSTANCE.getCurrentDocID() == EDocID.HOME_NETWORK) {
-                    VSubmenuOnlineLobby.SINGLETON_INSTANCE.populate();
+        } else if (message != null && message.startsWith(ForgeConstants.CONN_ERROR_PREFIX)) {
+            // Show detailed connection error
+            String errorDetail = message.substring(ForgeConstants.CONN_ERROR_PREFIX.length());
+            FOptionPane.showErrorDialog(errorDetail, Localizer.getInstance().getMessage("lblConnectionError"));
+            SOverlayUtils.hideOverlay();
+        } else if (Objects.equals(message, ForgeConstants.INVALID_HOST_COMMAND)) {
+            FOptionPane.showErrorDialog(Localizer.getInstance().getMessage("lblDetectedInvalidHostAddress", url));
+            SOverlayUtils.hideOverlay();
+        } else {
+            SwingUtilities.invokeLater(() -> {
+                SOverlayUtils.hideOverlay();
+                if (result instanceof ChatMessage) {
+                    FNetOverlay.SINGLETON_INSTANCE.show(result);
+                    if (CHomeUI.SINGLETON_INSTANCE.getCurrentDocID() == EDocID.HOME_NETWORK) {
+                        VSubmenuOnlineLobby.SINGLETON_INSTANCE.populate();
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     @Override

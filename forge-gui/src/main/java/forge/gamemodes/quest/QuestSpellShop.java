@@ -5,10 +5,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.tuple.Pair;
-
-import com.google.common.base.Function;
 
 import forge.deck.CardPool;
 import forge.deck.Deck;
@@ -281,7 +280,6 @@ public class QuestSpellShop {
     }
 
     public static void sell(Iterable<Entry<InventoryItem, Integer>> items, IItemManager<InventoryItem> shopManager, IItemManager<InventoryItem> inventoryManager, boolean confirmSale) {
-
         long totalReceived = 0;
         int sellPriceLimit = FModel.getQuest().getCards().getSellPriceLimit();
 
@@ -324,11 +322,9 @@ public class QuestSpellShop {
 
         inventoryManager.removeItems(itemsToSell);
         shopManager.addItems(itemsToSell);
-
     }
 
     public static void sellExtras(IItemManager<InventoryItem> shopManager, IItemManager<InventoryItem> inventoryManager) {
-
         List<Entry<InventoryItem, Integer>> cardsToRemove = new LinkedList<>();
         for (Entry<InventoryItem, Integer> item : inventoryManager.getPool()) {
             PaperCard card = (PaperCard)item.getKey();
@@ -376,7 +372,6 @@ public class QuestSpellShop {
             sellCard(card, item.getValue(), pricePerCard);
 
         }
-
     }
 
     private static void sellCard(final PaperCard card, final int quantity, final int pricePerCard) {

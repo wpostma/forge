@@ -1,14 +1,15 @@
 package forge.gamemodes.net;
 
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
-
 import forge.gui.GuiBase;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import net.jpountz.lz4.LZ4BlockOutputStream;
+import org.tinylog.Logger;
+
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 public class CompatibleObjectEncoder extends MessageToByteEncoder<Serializable> {
     private static final byte[] LENGTH_PLACEHOLDER = new byte[4];
@@ -33,6 +34,10 @@ public class CompatibleObjectEncoder extends MessageToByteEncoder<Serializable> 
         }
 
         int endIdx = out.writerIndex();
-        out.setInt(startIdx, endIdx - startIdx - 4);
+        int msgSize = endIdx - startIdx - 4;
+        out.setInt(startIdx, msgSize);
+        if (msgSize > 20_000) {
+            Logger.info("Encoded {} bytes (compressed) for {}", msgSize, msg.getClass().getSimpleName());
+        }
     }
 }

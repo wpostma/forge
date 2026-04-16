@@ -1,13 +1,5 @@
 package forge.deck.io;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.apache.commons.lang3.StringUtils;
-
 import forge.deck.CardPool;
 import forge.deck.Deck;
 import forge.deck.DeckSection;
@@ -15,6 +7,13 @@ import forge.util.FileSection;
 import forge.util.FileSectionManual;
 import forge.util.FileUtil;
 import forge.util.TextUtil;
+import org.apache.commons.lang3.StringUtils;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class DeckSerializer {
 
@@ -60,8 +59,13 @@ public class DeckSerializer {
             String sb = serializeDraftNotes(d.getDraftNotes());
             out.add(TextUtil.concatNoSpace(DeckFileHeader.DRAFT_NOTES, "=", sb));
         }
-    
+        if (!d.getKeyCards().isEmpty()) {
+            out.add(TextUtil.concatNoSpace(DeckFileHeader.KEY_CARDS, "=", StringUtils.join(d.getKeyCards(), ";")));
+        }
+
         for(Entry<DeckSection, CardPool> s : d) {
+            if(s.getValue().isEmpty())
+                continue;
             out.add(TextUtil.enclosedBracket(s.getKey().toString()));
             out.add(s.getValue().toCardList(System.lineSeparator()));
         }
@@ -99,6 +103,9 @@ public class DeckSerializer {
         d.setAiHints(dh.getAiHints());
         d.getTags().addAll(dh.getTags());
         d.setDraftNotes(dh.getDraftNotes());
+        for (String keyCard : dh.getKeyCards()) {
+            d.addKeyCard(keyCard);
+        }
         d.setDeferredSections(sections);
         return d;
     }

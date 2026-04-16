@@ -1,18 +1,12 @@
 package forge.gui.interfaces;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-import com.google.common.base.Function;
-
 import forge.LobbyPlayer;
 import forge.ai.GameState;
 import forge.deck.CardPool;
 import forge.game.GameEntityView;
 import forge.game.GameView;
-import forge.game.card.Card;
 import forge.game.card.CardView;
+import forge.game.event.GameEvent;
 import forge.game.event.GameEventSpellAbilityCast;
 import forge.game.event.GameEventSpellRemovedFromStack;
 import forge.game.phase.PhaseType;
@@ -28,7 +22,12 @@ import forge.localinstance.skin.FSkinProp;
 import forge.player.PlayerZoneUpdate;
 import forge.player.PlayerZoneUpdates;
 import forge.trackable.TrackableCollection;
+import forge.util.FSerializableFunction;
 import forge.util.ITriggerEvent;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public interface IGuiGame {
     void setGameView(GameView gameView);
@@ -81,7 +80,14 @@ public interface IGuiGame {
 
     void notifyStackRemoval(final GameEventSpellRemovedFromStack event);
 
-    void handleLandPlayed(Card land);
+    void handleLandPlayed(CardView land);
+
+    void handleGameEvent(GameEvent event);
+    default void handleGameEvents(List<GameEvent> events) {
+        for (GameEvent event : events) {
+            handleGameEvent(event);
+        }
+    }
 
     Iterable<PlayerZoneUpdate> tempShowZones(PlayerView controller, Iterable<PlayerZoneUpdate> zonesToUpdate);
 
@@ -105,6 +111,8 @@ public interface IGuiGame {
 
     void updateLives(Iterable<PlayerView> livesUpdate);
     void updateShards(Iterable<PlayerView> shardsUpdate);
+
+    void updateDependencies();
 
     void setPanelSelection(CardView hostCard);
 
@@ -149,7 +157,7 @@ public interface IGuiGame {
 
     <T> List<T> getChoices(String message, int min, int max, List<T> choices);
 
-    <T> List<T> getChoices(String message, int min, int max, List<T> choices, T selected, Function<T, String> display);
+    <T> List<T> getChoices(String message, int min, int max, List<T> choices, List<T> selected, FSerializableFunction<T, String> display);
 
     // Get Integer in range
     Integer getInteger(String message, int min);
@@ -183,12 +191,15 @@ public interface IGuiGame {
      * @return One of {@code choices}. Can only be {@code null} if {@code choices} is empty.
      */
     <T> T one(String message, List<T> choices);
+    <T> T one(String message, List<T> choices, FSerializableFunction<T, String> display);
 
     <T> void reveal(String message, List<T> items);
 
     <T> List<T> many(String title, String topCaption, int cnt, List<T> sourceChoices, CardView c);
 
     <T> List<T> many(String title, String topCaption, int min, int max, List<T> sourceChoices, CardView c);
+
+    <T> List<T> many(String title, String topCaption, int min, int max, List<T> sourceChoices, List<T> destChoices, CardView c);
 
     <T> List<T> order(String title, String top, List<T> sourceChoices, CardView c);
 
@@ -223,9 +234,7 @@ public interface IGuiGame {
 
     void restoreOldZones(PlayerView playerView, PlayerZoneUpdates playerZoneUpdates);
 
-    void setHighlighted(PlayerView pv, boolean b);
-
-    void setUsedToPay(CardView card, boolean value);
+    void setHighlighted(GameEntityView pv, boolean b);
 
     void setSelectables(final Iterable<CardView> cards);
 
@@ -235,8 +244,9 @@ public interface IGuiGame {
 
     boolean isGamePaused();
 
-    void setgamePause(boolean pause);
+    void setGamePause(boolean pause);
 
+    PlaybackSpeed getGameSpeed();
     void setGameSpeed(PlaybackSpeed gameSpeed);
 
     String getDayTime();
@@ -274,4 +284,11 @@ public interface IGuiGame {
     void clearAutoYields();
 
     void setCurrentPlayer(PlayerView player);
+
+    /** Signal to start a client-side elapsed timer for waiting display. */
+    void showWaitingTimer(PlayerView forPlayer, String waitingForPlayerName);
+
+    /** Returns true if this game instance is a network game. */
+    boolean isNetGame();
+    void setNetGame();
 }

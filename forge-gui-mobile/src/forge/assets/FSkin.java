@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Array;
 import forge.Forge;
 import forge.card.CardFaceSymbols;
+import forge.card.MagicColor;
 import forge.gui.FThreads;
 import forge.gui.GuiBase;
 import forge.localinstance.properties.ForgeConstants;
@@ -176,9 +177,11 @@ public class FSkin {
         Forge.getAssets().loadTexture(getSkinFile("hd_logo.png"));
         Forge.getAssets().loadTexture(getDefaultSkinFile("adv_logo.png"), new TextureLoader.TextureParameter());
         Forge.getAssets().loadTexture(getDefaultSkinFile("cover.png"));
+        Forge.getAssets().loadTexture(getDefaultSkinFile("nfs.png"));
         Forge.getAssets().loadTexture(getDefaultSkinFile("overlay_alpha.png"));
         Forge.getAssets().loadTexture(getDefaultSkinFile("spiral.png"));
         Forge.getAssets().loadTexture(getDefaultSkinFile("splatter.png"));
+        Forge.getAssets().loadTexture(getDefaultSkinFile("holofoil.png"));
 
         if (splashScreen != null) {
             final FileHandle f = getSkinFile("bg_splash.png");
@@ -302,6 +305,8 @@ public class FSkin {
         final FileHandle f14 = getDefaultSkinFile(ForgeConstants.SPRITE_SETLOGO_FILE);
         final FileHandle f15 = getSkinFile(ForgeConstants.SPRITE_SETLOGO_FILE);
         final FileHandle f16 = getDefaultSkinFile(ForgeConstants.SPRITE_WATERMARK_FILE);
+        final FileHandle f24 = getSkinFile(ForgeConstants.SPRITE_ZONE_FILE);
+        final FileHandle f24b = getDefaultSkinFile(ForgeConstants.SPRITE_ZONE_FILE);
         */
 
         try {
@@ -376,6 +381,12 @@ public class FSkin {
                 }
             }
             for (FSkinProp prop : FSkinProp.MANA_IMG.values()) {
+                FSkinImageImpl image = new FSkinImageImpl(prop);
+                image.load(preferredIcons);
+                FSkin.getImages().put(prop, image);
+            }
+            for (MagicColor.Color c : MagicColor.Color.values()) {
+                FSkinProp prop = FSkinProp.watermarkFromColor(c);
                 FSkinImageImpl image = new FSkinImageImpl(prop);
                 image.load(preferredIcons);
                 FSkin.getImages().put(prop, image);

@@ -27,10 +27,21 @@ public enum FSkinImage implements FSkinImageInterface {
     HDGRAVEYARD (FSkinProp.IMG_HDZONE_GRAVEYARD),
 
     SIDEBOARD   (FSkinProp.IMG_ZONE_SIDEBOARD),
+    HDSIDEBOARD (FSkinProp.IMG_HDZONE_SIDEBOARD),
 
-    HDMANAPOOL   (FSkinProp.IMG_HDZONE_MANAPOOL),
+    HDMANAPOOL  (FSkinProp.IMG_HDZONE_MANAPOOL),
 
-    POISON      (FSkinProp.IMG_ZONE_POISON),
+    COMMAND     (FSkinProp.IMG_ZONE_COMMAND),
+    AVATAR      (FSkinProp.IMG_ZONE_AVATAR),
+    SCHEME      (FSkinProp.IMG_ZONE_SCHEME),
+    PLANAR      (FSkinProp.IMG_ZONE_PLANAR),
+    CONSPIRACY  (FSkinProp.IMG_ZONE_CONSPIRACY),
+    ATTRACTION  (FSkinProp.IMG_ZONE_ATTRACTION),
+    CONTRAPTION (FSkinProp.IMG_ZONE_CONTRAPTION),
+    STICKER     (FSkinProp.IMG_ZONE_STICKER),
+    ANTE        (FSkinProp.IMG_ZONE_ANTE),
+    SCRAPYARD   (FSkinProp.IMG_ZONE_SCRAPYARD),
+    JUNKYARD    (FSkinProp.IMG_ZONE_JUNKYARD),
 
     //CMC ranges
     CMC_LOW        (FSkinProp.IMG_CMC_LOW),
@@ -44,14 +55,6 @@ public enum FSkinImage implements FSkinImageInterface {
     SET_RARE       (FSkinProp.IMG_SETLOGO_RARE),
     SET_MYTHIC     (FSkinProp.IMG_SETLOGO_MYTHIC),
     SET_SPECIAL    (FSkinProp.IMG_SETLOGO_SPECIAL),
-
-    //Watermarks
-    WATERMARK_G    (FSkinProp.IMG_WATERMARK_G),
-    WATERMARK_R    (FSkinProp.IMG_WATERMARK_R),
-    WATERMARK_B    (FSkinProp.IMG_WATERMARK_B),
-    WATERMARK_U    (FSkinProp.IMG_WATERMARK_U),
-    WATERMARK_W    (FSkinProp.IMG_WATERMARK_W),
-    WATERMARK_C    (FSkinProp.IMG_WATERMARK_C),
 
     //draft ranks
     DRAFTRANK_D (FSkinProp.IMG_DRAFTRANK_D),
@@ -72,6 +75,7 @@ public enum FSkinImage implements FSkinImageInterface {
     COUNTERS2       (FSkinProp.IMG_COUNTERS2),
     COUNTERS3       (FSkinProp.IMG_COUNTERS3),
     COUNTERS_MULTI  (FSkinProp.IMG_COUNTERS_MULTI),
+    POISON          (FSkinProp.IMG_POISON),
     ENERGY          (FSkinProp.IMG_ENERGY),
     TICKET          (FSkinProp.IMG_TICKET),
     RAD             (FSkinProp.IMG_RAD),
@@ -92,7 +96,6 @@ public enum FSkinImage implements FSkinImageInterface {
 
     //choice-search-misc
     HDCHOICE     (FSkinProp.ICO_HDCHOICE),
-    HDSIDEBOARD  (FSkinProp.ICO_HDSIDEBOARD),
     HDPREFERENCE (FSkinProp.ICO_HDPREFERENCE),
     HDIMPORT     (FSkinProp.ICO_HDIMPORT),
     HDEXPORT     (FSkinProp.ICO_HDEXPORT),

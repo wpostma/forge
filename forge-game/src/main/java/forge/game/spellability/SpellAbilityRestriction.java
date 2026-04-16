@@ -19,9 +19,8 @@ package forge.game.spellability;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 import forge.game.Game;
@@ -35,6 +34,7 @@ import forge.game.keyword.Keyword;
 import forge.game.phase.PhaseType;
 import forge.game.player.Player;
 import forge.game.staticability.StaticAbilityCastWithFlash;
+import forge.game.staticability.StaticAbilityExhaust;
 import forge.game.staticability.StaticAbilityNumLoyaltyAct;
 import forge.game.zone.Zone;
 import forge.game.zone.ZoneType;
@@ -148,17 +148,6 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
             this.setGameTypes(GameType.listValueOf(params.get("ActivationGameTypes")));
         }
 
-        if (params.containsKey("ActivationCardsInHand")) {
-            this.setActivateCardsInHand(Integer.parseInt(params.get("ActivationCardsInHand")));
-        }
-        if (params.containsKey("OrActivationCardsInHand")) {
-            this.setActivateCardsInHand2(Integer.parseInt(params.get("OrActivationCardsInHand")));
-        }
-
-        if (params.containsKey("ActivationChosenColor")) {
-            this.setColorToCheck(params.get("ActivationChosenColor"));
-        }
-
         if (params.containsKey("IsPresent")) {
             this.setIsPresent(params.get("IsPresent"));
             if (params.containsKey("PresentCompare")) {
@@ -229,11 +218,6 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
 
         if (cardZone == null || this.getZone() == null || !cardZone.is(this.getZone())) {
             // If Card is not in the default activating zone, do some additional checks
-
-            // A conspiracy with hidden agenda: reveal at any time
-            if (cardZone != null && cardZone.is(ZoneType.Command) && sa.hasParam("HiddenAgenda")) {
-                return true;
-            }
             if (sa.hasParam("AdditionalActivationZone")) {
                 if (cardZone != null && cardZone.is(ZoneType.valueOf(sa.getParam("AdditionalActivationZone")))) {
                     return true;
@@ -342,6 +326,11 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
                 return false;
             }
         }
+        if (sa.isSneak()) {
+            if (!game.getPhaseHandler().is(PhaseType.COMBAT_DECLARE_BLOCKERS)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -357,6 +346,10 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
      */
     public final boolean checkActivatorRestrictions(final Card c, final SpellAbility sa) {
         Player activator = sa.getActivatingPlayer();
+
+        if (sa.isCastFromPlayEffect()) {
+            return true;
+        }
 
         if (sa.isSpell()) {
             // Spells should always default to "controller" but use mayPlay check.
@@ -389,22 +382,6 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
             return false;
         }
 
-        if (getCardsInHand() != -1) {
-            int h = activator.getCardsIn(ZoneType.Hand).size();
-            if (getCardsInHand2() != -1) {
-                if (h != getCardsInHand() && h != getCardsInHand2()) {
-                    return false;
-                }
-            } else if (h != getCardsInHand()) {
-                return false;
-            }
-        }
-
-        if (getColorToCheck() != null) {
-            if (!sa.getHostCard().hasChosenColor(getColorToCheck())) {
-                return false;
-            }
-        }
         if (isHellbent()) {
             if (!activator.hasHellbent()) {
                 return false;
@@ -468,7 +445,8 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
                 list = new FCollection<>(game.getCardsIn(getPresentZone()));
             }
 
-            final int left = Iterables.size(Iterables.filter(list, GameObjectPredicates.restriction(getIsPresent().split(","), activator, c, sa)));
+            Predicate<GameObject> restriction = GameObjectPredicates.restriction(getIsPresent().split(","), activator, c, sa);
+            final int left = (int) list.stream().filter(restriction).count();
 
             final String rightString = this.getPresentCompare().substring(2);
             int right = AbilityUtils.calculateAmount(c, rightString, sa);
@@ -482,9 +460,6 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
             int life = 1;
             if (this.getLifeTotal().equals("You")) {
                 life = activator.getLife();
-            }
-            if (this.getLifeTotal().equals("OpponentSmallest")) {
-                life = activator.getOpponentsSmallestLifeTotal();
             }
 
             int right = AbilityUtils.calculateAmount(sa.getHostCard(), this.getLifeAmount().substring(2), sa);
@@ -507,10 +482,8 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
             }
         }
 
-        // 702.37e
-        // If the permanent wouldn't have a morph cost if it were face up, it can't be turned face up this way.
-        // 702.168b
-        // If the permanent wouldn't have a disguise cost if it were face up, it can't be turned face up this way.
+        // CR 702.37e / 702.168b
+        // If the permanent wouldn't have a morph / disguise cost if it were face up, it can't be turned face up this way.
         if ((sa.isMorphUp() || sa.isDisguiseUp()) && c.isInPlay()) {
             Card cp = c;
             if (!c.isLKI()) {
@@ -540,6 +513,14 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
         if (sa.isBoast()) {
             int limit = activator.hasKeyword("Creatures you control can boast twice during each of your turns rather than once.") ? 2 : 1;
             if (limit <= sa.getActivationsThisTurn()) {
+                return false;
+            }
+        } else if (sa.isExhaust()) {
+            if (sa.getActivationsThisGame() > 0 && !StaticAbilityExhaust.anyWithExhaust(activator)) {
+                return false;
+            }
+        } else if (sa.isPowerUp()) {
+            if (sa.getActivationsThisGame() > 0) {
                 return false;
             }
         }
@@ -573,7 +554,7 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
 
         if (this.getGameTypes().size() > 0) {
             Predicate<GameType> pgt = type -> game.getRules().hasAppliedVariant(type);
-            if (!Iterables.any(getGameTypes(), pgt)) {
+            if (getGameTypes().stream().noneMatch(pgt)) {
                 return false;
             }
         }
@@ -615,14 +596,12 @@ public class SpellAbilityRestriction extends SpellAbilityVariables {
             return false;
         }
 
-        if (!sa.isCastFromPlayEffect()) {
-            if (!checkTimingRestrictions(c, sa)) {
-                return false;
-            }
+        if (!checkActivatorRestrictions(c, sa)) {
+            return false;
+        }
 
-            if (!checkActivatorRestrictions(c, sa)) {
-                return false;
-            }
+        if (!checkTimingRestrictions(c, sa)) {
+            return false;
         }
 
         if (!checkZoneRestrictions(c, sa)) {

@@ -34,6 +34,7 @@ import forge.util.collect.FCollection;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 /**
  * <p>
@@ -154,10 +155,6 @@ public class SpellAbilityCondition extends SpellAbilityVariables {
 
         if (params.containsKey("ConditionChosenColor")) {
             this.setColorToCheck(params.get("ConditionChosenColor"));
-        }
-
-        if (params.containsKey("Presence")) {
-            this.setPresenceCondition(params.get("Presence"));
         }
 
         // Condition version of IsPresent stuff
@@ -281,20 +278,6 @@ public class SpellAbilityCondition extends SpellAbilityVariables {
 
         if (this.optionalCostPaid && this.optionalBoolean && !sa.isOptionalCostPaid(OptionalCost.Generic)) return false;
         if (this.optionalCostPaid && !this.optionalBoolean && sa.isOptionalCostPaid(OptionalCost.Generic)) return false;
-        
-        if (!this.getPresenceCondition().isEmpty()) {
-            if (host.getCastFrom() == null || host.getCastSA() == null)
-                return false;
-
-            final String type = this.getPresenceCondition();
-
-            int revealed = AbilityUtils.calculateAmount(host, "Revealed$Valid " + type, host.getCastSA());
-            int ctrl = AbilityUtils.calculateAmount(host, "Count$LastStateBattlefield " + type + ".YouCtrl", host.getCastSA());
-
-            if (revealed + ctrl == 0) {
-                return false;
-            }
-        }
 
         if (this.getNoDifferentColors() != null) {
             List<Card> tgts = AbilityUtils.getDefinedCards(host, this.getNoDifferentColors(), sa);
@@ -352,13 +335,6 @@ public class SpellAbilityCondition extends SpellAbilityVariables {
             }
         }
 
-        if (this.getCardsInHand() != -1) {
-            // Can handle Library of Alexandria, or Hellbent
-            if (activator.getCardsIn(ZoneType.Hand).size() != this.getCardsInHand()) {
-                return false;
-            }
-        }
-
         if (this.getColorToCheck() != null) {
             if (!host.hasChosenColor(this.getColorToCheck())) {
                 return false;
@@ -385,7 +361,8 @@ public class SpellAbilityCondition extends SpellAbilityVariables {
                 }
             }
 
-            final int left = Iterables.size(Iterables.filter(list, GameObjectPredicates.restriction(getIsPresent().split(","), activator, host, sa)));
+            Predicate<GameObject> restriction = GameObjectPredicates.restriction(getIsPresent().split(","), activator, host, sa);
+            final int left = (int) list.stream().filter(restriction).count();
 
             final String rightString = this.getPresentCompare().substring(2);
             int right = AbilityUtils.calculateAmount(host, rightString, sa);
@@ -416,7 +393,8 @@ public class SpellAbilityCondition extends SpellAbilityVariables {
                 }
             }
 
-            final int left = Iterables.size(Iterables.filter(list, GameObjectPredicates.restriction(getIsPresent2().split(","), activator, host, sa)));
+            Predicate<GameObject> restriction = GameObjectPredicates.restriction(getIsPresent2().split(","), activator, host, sa);
+            final int left = (int) list.stream().filter(restriction).count();
 
             final String rightString = this.getPresentCompare2().substring(2);
             int right = AbilityUtils.calculateAmount(host, rightString, sa);
@@ -438,12 +416,7 @@ public class SpellAbilityCondition extends SpellAbilityVariables {
         }
 
         if (this.getLifeTotal() != null) {
-            int life = 1;
-            if (this.getLifeTotal().equals("OpponentSmallest")) {
-                life = activator.getOpponentsSmallestLifeTotal();
-            } else {
-                life = AbilityUtils.getDefinedPlayers(host, this.getLifeTotal(), sa).getFirst().getLife();
-            }
+            int life = AbilityUtils.getDefinedPlayers(host, this.getLifeTotal(), sa).getFirst().getLife();
 
             int right = 1;
             final String rightString = this.getLifeAmount().substring(2);
@@ -457,6 +430,7 @@ public class SpellAbilityCondition extends SpellAbilityVariables {
                 return false;
             }
         }
+
         if (this.getTargetValidTargeting() != null) {
             final TargetChoices matchTgt = sa.getTargets();
             if (matchTgt == null || matchTgt.getFirstTargetedSpell() == null

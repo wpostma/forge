@@ -20,10 +20,15 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import forge.ImageCache;
 import org.apache.commons.lang3.StringUtils;
 
 import forge.card.CardRarity;
 import forge.card.CardStateName;
+import forge.card.CardType;
+import forge.card.CardTypeView;
+import forge.card.ColorSet;
+import forge.card.MagicColor;
 import forge.card.mana.ManaCost;
 import forge.game.card.CardView;
 import forge.game.card.CardView.CardStateView;
@@ -183,7 +188,7 @@ public class FCardImageRenderer {
             int w = width;
             boolean hasPTBox = false;
             if (!card.isSplitCard() && !card.isFlipCard()) {
-                final CardStateView state = card.getState(card.isAdventureCard() ? false : altState);
+                final CardStateView state = card.getState(card.hasSecondaryState() ? false : altState);
                 if ((state.isCreature() && !state.getKeywordKey().contains("Level up"))
                         || state.isPlaneswalker() || state.isBattle() || state.isVehicle())
                     hasPTBox = true;
@@ -207,10 +212,9 @@ public class FCardImageRenderer {
             final String leftText = needTranslation ? CardTranslation.getTranslatedOracle(leftState) : leftState.getOracleText();
             final CardStateView rightState = card.getRightSplitState();
             String rightText = needTranslation ? CardTranslation.getTranslatedOracle(rightState) : rightState.getOracleText();
-            boolean isAftermath = (rightState.getKeywordKey().contains("Aftermath"));
             BufferedImage leftArt = null;
             BufferedImage rightArt = null;
-            if (isAftermath) {
+            if (rightState.hasAftermath()) {
                 if (art != null) {
                     int leftWidth = Math.round(art.getWidth() * 0.61328125f);
                     leftArt = art.getSubimage(0, 0, leftWidth, art.getHeight());
@@ -259,7 +263,7 @@ public class FCardImageRenderer {
                 g.rotate(Math.PI);
             }
             drawFlipCardImage(g, state, text, flipState, flipText, width, height - heightAdjust, art);
-        } else if (card.isAdventureCard()) {
+        } else if (card.hasSecondaryState()) {
             boolean needTranslation = !card.isToken() || !(card.getCloneOrigin() == null);
             final CardStateView state = card.getState(false);
             final String text = card.getText(state, needTranslation ? CardTranslation.getTranslationTexts(state) : null);
@@ -288,6 +292,11 @@ public class FCardImageRenderer {
         //determine colors for borders
         final List<DetailColors> borderColors = CardDetailUtil.getBorderColors(state, true);
         Color[] colors = fillColorBackground(g, borderColors, x, y, w, h, BLACK_BORDER_THICKNESS);
+        if (state.isEnchantment()) {
+            //draw fake nyx effect
+            g.drawImage(state.getColors().hasWhite() && state.getColors().countColors() == 1 ?
+                    ImageCache.getInvertedStarsImage() :  ImageCache.getStarsImage(), x, y, w, h, null);
+        }
 
         x += OUTER_BORDER_THICKNESS;
         y += OUTER_BORDER_THICKNESS;
@@ -295,7 +304,7 @@ public class FCardImageRenderer {
         int headerHeight = NAME_SIZE + 2 * HEADER_PADDING;
         int typeBoxHeight = TYPE_SIZE + 2 * TYPE_PADDING;
         int ptBoxHeight = 0;
-        if (state.isCreature() || state.isPlaneswalker() | state.isBattle() || state.isVehicle()) {
+        if (state.isCreature() || state.isPlaneswalker() | state.isBattle() || state.hasPrintedPT()) {
             //if P/T box needed, make room for it
             ptBoxHeight = headerHeight;
         }
@@ -670,7 +679,7 @@ public class FCardImageRenderer {
 
         //draw mana cost for card
         if (drawMana) {
-            ManaCost manaCost = state.getManaCost();
+            ManaCost manaCost = state.getOriginalManaCost();
             int manaCostWidth = manaCost.getGlyphCount() * NAME_SIZE + HEADER_PADDING;
             CardFaceSymbols.draw(g, manaCost, x + w - manaCostWidth, y + (h - NAME_SIZE) / 2 + 1, NAME_SIZE - 1);
             w -= padding + manaCostWidth;
@@ -682,7 +691,6 @@ public class FCardImageRenderer {
         drawVerticallyCenteredString(g, CardTranslation.getTranslatedName(state.getName()),
             new Rectangle(x, y, w, h), NAME_FONT, NAME_SIZE);
     }
-
 
     private static void drawArt(Graphics2D g, Color[] colors, int x, int y, int w, int h, BufferedImage art) {
         if (art != null) {
@@ -763,19 +771,19 @@ public class FCardImageRenderer {
     private static void drawTextBox(Graphics2D g, CardStateView state, String text, Color[] colors,
             int x, int y, int w, int h, int textBoxFlags) {
         int yAdjust = (textBoxFlags >> 16);
+        FSkinProp imageProp = null;
         if (state.isLand()) {
-            DetailColors modColors = DetailColors.WHITE;
-            if (state.isBasicLand()) {
-                if (state.isForest())
-                    modColors = DetailColors.GREEN;
-                else if (state.isIsland())
-                    modColors = DetailColors.BLUE;
-                else if (state.isMountain())
-                    modColors = DetailColors.RED;
-                else if (state.isSwamp())
-                    modColors = DetailColors.BLACK;
-                else if (state.isPlains())
-                    modColors = DetailColors.LAND;
+            DetailColors modColors = DetailColors.LAND;
+            CardTypeView type = state.getType();
+            long landTypeCount = state.getType().getLandTypes().stream().filter(CardType::isABasicLandType).count();
+            if (state.isBasicLand() && landTypeCount == 1) {
+                for (MagicColor.Color c : MagicColor.Color.values()) {
+                    String str = c.getBasicLandType();
+                    if (str != null && type.hasSubtype(str)) {
+                        modColors = CardDetailUtil.getColor(c);
+                        imageProp = FSkinProp.watermarkFromColor(c);
+                    }
+                }
             }
             Color bgColor = fromDetailColor(modColors);
             bgColor = tintColor(Color.WHITE, bgColor, NAME_BOX_TINT);
@@ -791,30 +799,13 @@ public class FCardImageRenderer {
         g.drawRect(x, y, w, h);
 
         if (state.isBasicLand()) {
+            ColorSet origColors = state.origProduceMana();
             //draw icons for basic lands
-            String imageKey;
-            switch (state.getName().replaceFirst("^Snow-Covered ", "")) {
-            case "Plains":
-                imageKey = "W";
-                break;
-            case "Island":
-                imageKey = "U";
-                break;
-            case "Swamp":
-                imageKey = "B";
-                break;
-            case "Mountain":
-                imageKey = "R";
-                break;
-            case "Forest":
-                imageKey = "G";
-                break;
-            default:
-                imageKey = "C";
-                break;
+            if (imageProp == null && origColors == ColorSet.C) {
+                imageProp = FSkinProp.IMG_WATERMARK_C;
             }
             int iconSize = Math.round(h * 0.75f);
-            CardFaceSymbols.drawWatermark(imageKey, g, x + (w - iconSize) / 2, y + (h - iconSize) / 2, iconSize);
+            CardFaceSymbols.drawWatermark(imageProp, g, x + (w - iconSize) / 2, y + (h - iconSize) / 2, iconSize);
         } else {
             if (StringUtils.isEmpty(text))
                 return;
@@ -841,6 +832,14 @@ public class FCardImageRenderer {
                 pieces.add("/");
                 pieces.add(String.valueOf(state.getToughness()));
             }
+        }
+        else if (state.isSpaceCraft()) {
+            Color [] scColor = { Color.BLACK };
+            colors = scColor;
+            TEXT_COLOR = Color.WHITE;
+            pieces.add(String.valueOf(state.getPower()));
+            pieces.add("/");
+            pieces.add(String.valueOf(state.getToughness()));
         }
         else if (state.isPlaneswalker()) {
             Color [] pwColor = { Color.BLACK };

@@ -17,8 +17,6 @@
  */
 package forge.gamemodes.match.input;
 
-import java.util.List;
-
 import forge.game.Game;
 import forge.game.card.Card;
 import forge.game.card.CardCollection;
@@ -28,6 +26,8 @@ import forge.game.zone.ZoneType;
 import forge.player.PlayerControllerHuman;
 import forge.util.ITriggerEvent;
 import forge.util.Localizer;
+
+import java.util.List;
 
 /**
  * <p>
@@ -133,12 +133,12 @@ public class InputLondonMulligan extends InputSyncronizedBase {
     }
 
     private void setCardHighlight(final Card card, final boolean state) {
-        getController().getGui().setUsedToPay(card.getView(), state);
+        getController().getGui().setHighlighted(card.getView(), state);
     }
 
     private void resetCardHighlights() {
         for (final Card c : selected) {
-            getController().getGui().setUsedToPay(c.getView(), false);
+            getController().getGui().setHighlighted(c.getView(), false);
         }
     }
 }

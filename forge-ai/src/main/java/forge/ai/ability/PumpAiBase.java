@@ -1,34 +1,21 @@
 package forge.ai.ability;
 
-import java.util.List;
-
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Iterables;
-
-import forge.ai.AiAttackController;
-import forge.ai.ComputerUtil;
-import forge.ai.ComputerUtilCard;
-import forge.ai.ComputerUtilCombat;
-import forge.ai.SpellAbilityAi;
+import forge.ai.*;
 import forge.card.MagicColor;
 import forge.game.Game;
 import forge.game.ability.AbilityUtils;
-import forge.game.card.Card;
-import forge.game.card.CardCollection;
-import forge.game.card.CardCollectionView;
-import forge.game.card.CardLists;
-import forge.game.card.CardPredicates;
-import forge.game.card.CardUtil;
+import forge.game.card.*;
 import forge.game.combat.Combat;
 import forge.game.combat.CombatUtil;
 import forge.game.keyword.Keyword;
 import forge.game.phase.PhaseHandler;
 import forge.game.phase.PhaseType;
-import forge.game.phase.Untap;
 import forge.game.player.Player;
 import forge.game.spellability.SpellAbility;
 import forge.game.zone.ZoneType;
+
+import java.util.List;
+import java.util.function.Predicate;
 
 public abstract class PumpAiBase extends SpellAbilityAi {
 
@@ -149,7 +136,7 @@ public abstract class PumpAiBase extends SpellAbilityAi {
             return CombatUtil.canBlockAtLeastOne(card, attackers);
         } else if (keyword.endsWith("This card doesn't untap during your next untap step.")) {
             return !ph.getPhase().isBefore(PhaseType.MAIN2) && !card.isUntapped() && ph.isPlayerTurn(ai)
-                    && Untap.canUntap(card);
+                    && card.canUntap(card.getController(), true);
         } else if (keyword.endsWith("Prevent all combat damage that would be dealt by CARDNAME.")
                 || keyword.endsWith("Prevent all damage that would be dealt by CARDNAME.")) {
             if (ph.isPlayerTurn(ai) && (!(CombatUtil.canBlock(card) || combat != null && combat.isBlocking(card))
@@ -160,7 +147,7 @@ public abstract class PumpAiBase extends SpellAbilityAi {
                 return false;
             }
             return ph.isPlayerTurn(ai) || (combat != null && combat.isAttacking(card) && card.getNetCombatDamage() > 0);
-        } else return !keyword.endsWith("CARDNAME's activated abilities can't be activated."); //too complex
+        } else return true;
     }
 
     /**
@@ -190,7 +177,7 @@ public abstract class PumpAiBase extends SpellAbilityAi {
             return !ph.isPlayerTurn(opp) && ((combat != null && combat.isAttacking(card)) || CombatUtil.canAttack(card, opp))
                     && !ph.getPhase().isAfter(PhaseType.COMBAT_DECLARE_ATTACKERS)
                     && newPower > 0
-                    && Iterables.any(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card));
+                    && opp.getCreaturesInPlay().anyMatch(CardPredicates.possibleBlockers(card));
         } else if (keyword.endsWith("Flying")) {
             CardCollectionView attackingFlyer = CardCollection.EMPTY;
             if (combat != null) {
@@ -205,7 +192,7 @@ public abstract class PumpAiBase extends SpellAbilityAi {
                     && ComputerUtilCombat.lifeInDanger(ai, game.getCombat())) {
                 return true;
             }
-            Predicate<Card> flyingOrReach = Predicates.or(CardPredicates.hasKeyword(Keyword.FLYING), CardPredicates.hasKeyword(Keyword.REACH));
+            Predicate<Card> flyingOrReach = CardPredicates.hasKeyword(Keyword.FLYING).or(CardPredicates.hasKeyword(Keyword.REACH));
             if (ph.isPlayerTurn(opp) && combat != null
                     && !attackingFlyer.isEmpty()
                     && CombatUtil.canBlock(card)) {
@@ -222,8 +209,8 @@ public abstract class PumpAiBase extends SpellAbilityAi {
             return !ph.isPlayerTurn(opp) && ((combat != null && combat.isAttacking(card)) || CombatUtil.canAttack(card, opp))
                     && !ph.getPhase().isAfter(PhaseType.COMBAT_DECLARE_ATTACKERS)
                     && newPower > 0
-                    && Iterables.any(CardLists.filter(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card)),
-                    Predicates.not(flyingOrReach));
+                    && CardLists.filter(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card))
+                        .anyMatch(flyingOrReach.negate());
         } else if (keyword.endsWith("Horsemanship")) {
             if (ph.isPlayerTurn(opp)
                     && ph.getPhase().equals(PhaseType.COMBAT_DECLARE_ATTACKERS)
@@ -284,7 +271,7 @@ public abstract class PumpAiBase extends SpellAbilityAi {
             return !ph.isPlayerTurn(opp) && ((combat != null && combat.isAttacking(card)) || CombatUtil.canAttack(card, opp))
                     && !ph.getPhase().isAfter(PhaseType.COMBAT_DECLARE_BLOCKERS)
                     && !opp.getCreaturesInPlay().isEmpty()
-                    && Iterables.any(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card));
+                    && opp.getCreaturesInPlay().anyMatch(CardPredicates.possibleBlockers(card));
         } else if (keyword.equals("First Strike")) {
             if (card.hasDoubleStrike()) {
                 return false;
@@ -327,7 +314,7 @@ public abstract class PumpAiBase extends SpellAbilityAi {
                     && CombatUtil.canBeBlocked(card, null, opp)
                     && !ph.getPhase().isAfter(PhaseType.COMBAT_DECLARE_ATTACKERS)
                     && newPower > 1
-                    && Iterables.any(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card));
+                    && opp.getCreaturesInPlay().anyMatch(CardPredicates.possibleBlockers(card));
         } else if (keyword.equals("Infect")) {
             if (newPower <= 0) {
                 return false;
@@ -362,36 +349,12 @@ public abstract class PumpAiBase extends SpellAbilityAi {
             return ComputerUtil.predictThreatenedObjects(sa.getActivatingPlayer(), sa).contains(card);
         } else if (keyword.equals("Persist")) {
             return card.getBaseToughness() > 1 && !card.hasKeyword(Keyword.UNDYING);
-        } else if (keyword.equals("Landwalk:Plains")) {
+        } else if (keyword.startsWith("Landwalk:")) {
             return !ph.isPlayerTurn(opp) && ((combat != null && combat.isAttacking(card)) || CombatUtil.canAttack(card, opp))
                     && !ph.getPhase().isAfter(PhaseType.COMBAT_DECLARE_ATTACKERS)
                     && newPower > 0
-                    && !CardLists.getType(opp.getLandsInPlay(), "Plains").isEmpty()
-                    && Iterables.any(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card));
-        } else if (keyword.equals("Landwalk:Island")) {
-            return !ph.isPlayerTurn(opp) && ((combat != null && combat.isAttacking(card)) || CombatUtil.canAttack(card, opp))
-                    && !ph.getPhase().isAfter(PhaseType.COMBAT_DECLARE_ATTACKERS)
-                    && newPower > 0
-                    && !CardLists.getType(opp.getLandsInPlay(), "Island").isEmpty()
-                    && Iterables.any(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card));
-        } else if (keyword.equals("Landwalk:Swamp")) {
-            return !ph.isPlayerTurn(opp) && ((combat != null && combat.isAttacking(card)) || CombatUtil.canAttack(card, opp))
-                    && !ph.getPhase().isAfter(PhaseType.COMBAT_DECLARE_ATTACKERS)
-                    && newPower > 0
-                    && !CardLists.getType(opp.getLandsInPlay(), "Swamp").isEmpty()
-                    && Iterables.any(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card));
-        } else if (keyword.equals("Landwalk:Mountain")) {
-            return !ph.isPlayerTurn(opp) && ((combat != null && combat.isAttacking(card)) || CombatUtil.canAttack(card, opp))
-                    && !ph.getPhase().isAfter(PhaseType.COMBAT_DECLARE_ATTACKERS)
-                    && newPower > 0
-                    && !CardLists.getType(opp.getLandsInPlay(), "Mountain").isEmpty()
-                    && Iterables.any(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card));
-        } else if (keyword.equals("Landwalk:Forest")) {
-            return !ph.isPlayerTurn(opp) && ((combat != null && combat.isAttacking(card)) || CombatUtil.canAttack(card, opp))
-                    && !ph.getPhase().isAfter(PhaseType.COMBAT_DECLARE_ATTACKERS)
-                    && newPower > 0
-                    && !CardLists.getType(opp.getLandsInPlay(), "Forest").isEmpty()
-                    && Iterables.any(opp.getCreaturesInPlay(), CardPredicates.possibleBlockers(card));
+                    && !CardLists.getType(opp.getLandsInPlay(), keyword.split(":")[1]).isEmpty()
+                    && opp.getCreaturesInPlay().anyMatch(CardPredicates.possibleBlockers(card));
         } else if (keyword.equals("Prevent all combat damage that would be dealt to CARDNAME.")) {
             return combat != null && (combat.isBlocking(card) || combat.isBlocked(card));
         } else if (keyword.equals("Menace")) {
@@ -447,48 +410,41 @@ public abstract class PumpAiBase extends SpellAbilityAi {
         } // -X/-X end
         else if (attack < 0 && !game.getReplacementHandler().isPreventCombatDamageThisTurn()) {
             // spells that give -X/0
-            boolean isMyTurn = game.getPhaseHandler().isPlayerTurn(ai);
-            if (isMyTurn) {
+            if (game.getPhaseHandler().isPlayerTurn(ai)) {
                 if (game.getPhaseHandler().getPhase().isBefore(PhaseType.COMBAT_BEGIN)) {
                     // TODO: Curse creatures that will block AI's creatures, if AI is going to attack.
                     list = new CardCollection();
                 } else {
                     list = new CardCollection();
                 }
-            } else {
+            } else if (game.getPhaseHandler().getPhase().isBefore(PhaseType.COMBAT_DECLARE_BLOCKERS)) {
                 // Human active, only curse attacking creatures
-                if (game.getPhaseHandler().getPhase().isBefore(PhaseType.COMBAT_DECLARE_BLOCKERS)) {
-                    list = CardLists.filter(list, c -> {
-                        if (combat == null || !combat.isAttacking(c)) {
-                            return false;
-                        }
-                        if (c.getNetPower() > 0 && ai.getLife() < 5) {
-                            return true;
-                        }
-                        //Don't waste a -7/-0 spell on a 1/1 creature
-                        return c.getNetPower() + attack > -2 || c.getNetPower() > 3;
-                    });
-                } else {
-                    list = new CardCollection();
-                }
-            }
-        } // -X/0 end
-        else {
-            final boolean addsKeywords = !keywords.isEmpty();
-            if (addsKeywords) {
-                // If the keyword can prevent a creature from attacking, see if there's some kind of viable prioritization
-                if (keywords.contains("CARDNAME can't attack.") || keywords.contains("CARDNAME can't attack or block.")
-                        || keywords.contains("HIDDEN CARDNAME can't attack.") || keywords.contains("HIDDEN CARDNAME can't attack or block.")) {
-                    if (CardLists.getNotType(list, "Creature").isEmpty()) {
-                        list = ComputerUtilCard.prioritizeCreaturesWorthRemovingNow(ai, list, true);
+                list = CardLists.filter(list, c -> {
+                    if (combat == null || !combat.isAttacking(c)) {
+                        return false;
                     }
-                }
-
-                list = CardLists.filter(list, c -> containsUsefulKeyword(ai, keywords, c, sa, attack));
-            } else if (sa.hasParam("NumAtt") || sa.hasParam("NumDef")) { 
-                // X is zero
+                    if (c.getNetPower() > 0 && ai.getLife() < 5) {
+                        return true;
+                    }
+                    //Don't waste a -7/-0 spell on a 1/1 creature
+                    return c.getNetPower() + attack > -2 || c.getNetPower() > 3;
+                });
+            } else {
                 list = new CardCollection();
             }
+        } // -X/0 end
+        else if (!keywords.isEmpty()) {
+            // If the keyword can prevent a creature from attacking, see if there's some kind of viable prioritization
+            if (keywords.contains("CARDNAME can't attack.") || keywords.contains("CARDNAME can't attack or block.")) {
+                if (CardLists.getNotType(list, "Creature").isEmpty()) {
+                    list = ComputerUtilCard.prioritizeCreaturesWorthRemovingNow(ai, list, true);
+                }
+            }
+
+            list = CardLists.filter(list, c -> containsUsefulKeyword(ai, keywords, c, sa, attack));
+        } else if (sa.hasParam("NumAtt") || sa.hasParam("NumDef")) {
+            // X is zero
+            list = new CardCollection();
         }
 
         return list;

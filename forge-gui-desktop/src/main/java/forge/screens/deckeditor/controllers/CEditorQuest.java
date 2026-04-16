@@ -22,16 +22,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.swing.KeyStroke;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import com.google.common.base.Supplier;
-
 import forge.card.CardRules;
-import forge.card.CardRulesPredicates;
 import forge.card.ColorSet;
 import forge.card.mana.ManaCost;
 import forge.deck.CardPool;
@@ -46,6 +44,7 @@ import forge.gui.framework.DragCell;
 import forge.gui.framework.FScreen;
 import forge.item.InventoryItem;
 import forge.item.PaperCard;
+import forge.item.PaperCardPredicates;
 import forge.itemmanager.CardManager;
 import forge.itemmanager.ColumnDef;
 import forge.itemmanager.ItemManagerConfig;
@@ -61,6 +60,7 @@ import forge.screens.home.quest.CSubmenuQuestDecks;
 import forge.screens.match.controllers.CDetailPicture;
 import forge.toolbox.FComboBox;
 import forge.util.ItemPool;
+import forge.util.StreamUtil;
 
 /**
  * Child controller for quest deck editor UI.
@@ -150,15 +150,7 @@ public final class CEditorQuest extends CDeckEditor<Deck> {
 
     // fills number of decks using each card
     private Map<PaperCard, Integer> countDecksForEachCard() {
-        final Map<PaperCard, Integer> result = new HashMap<>();
-        for (final Deck deck : this.questData.getMyDecks()) {
-            for (final Entry<PaperCard, Integer> e : deck.getMain()) {
-                final PaperCard card = e.getKey();
-                final Integer amount = result.get(card);
-                result.put(card, amount == null ? 1 : 1 + amount);
-            }
-        }
-        return result;
+        return questData.getMyDecks().stream().flatMap(deck -> StreamUtil.stream(deck.getMain())).collect(Collectors.groupingBy(e -> e.getKey(), Collectors.summingInt(e -> e.getValue())));
     }
 
     //=========== Overridden from ACEditorBase
@@ -303,7 +295,7 @@ public final class CEditorQuest extends CDeckEditor<Deck> {
         }
 
         @Override
-        public boolean apply(PaperCard subject) {
+        public boolean test(PaperCard subject) {
             CardRules cr = subject.getRules();
             ManaCost mc = cr.getManaCost();
             return allowedColor.containsAllColorsFrom(cr.getColorIdentity().getColor());
@@ -347,8 +339,7 @@ public final class CEditorQuest extends CDeckEditor<Deck> {
     }
 
     private ItemPool<PaperCard> getCommanderCardPool(){
-        Predicate<PaperCard> commanderPredicate = Predicates.compose(CardRulesPredicates.Presets.CAN_BE_COMMANDER, PaperCard::getRules);
-        return getRemainingCardPool().getFilteredPool(commanderPredicate);
+        return getRemainingCardPool().getFilteredPool(PaperCardPredicates.CAN_BE_COMMANDER);
     }
 
     @Override

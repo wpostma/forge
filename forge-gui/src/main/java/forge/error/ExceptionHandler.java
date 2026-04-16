@@ -18,20 +18,13 @@
 
 package forge.error;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.lang.Thread.UncaughtExceptionHandler;
-
-import com.esotericsoftware.minlog.Log;
-
 import forge.FTrace;
 import forge.gui.error.BugReporter;
 import forge.localinstance.properties.ForgeConstants;
 import forge.util.MultiplexOutputStream;
+
+import java.io.*;
+import java.lang.Thread.UncaughtExceptionHandler;
 
 /**
  * This class handles all exceptions that weren't caught by showing the error to
@@ -87,7 +80,8 @@ public class ExceptionHandler implements UncaughtExceptionHandler {
         oldSystemErr = System.err;
         System.setErr(new PrintStream(new MultiplexOutputStream(System.err, logFileStream), true));
 
-        Log.debug("Error handling registered!");
+        // no logger here, if it ever fails we'll know at least we passed through here
+        System.out.println("Error handling registered!");
         FTrace.initialize();
     }
 

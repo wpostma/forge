@@ -40,6 +40,8 @@ import forge.util.ITranslatable;
 import forge.util.Lang;
 import forge.util.TextUtil;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.*;
 
 /**
@@ -124,18 +126,18 @@ public abstract class Trigger extends TriggerReplacementBase {
             String desc = getParam("TriggerDescription");
             if (!desc.contains("ABILITY")) {
                 desc = CardTranslation.translateSingleDescriptionText(getParam("TriggerDescription"), nameSource);
-                String translatedName = CardTranslation.getTranslatedName(nameSource);
+                String translatedName = nameSource.getTranslatedName();
                 desc = TextUtil.fastReplace(desc,"CARDNAME", translatedName);
                 desc = TextUtil.fastReplace(desc,"NICKNAME", Lang.getInstance().getNickName(translatedName));
                 if (desc.contains("ORIGINALHOST") && this.getOriginalHost() != null) {
-                    desc = TextUtil.fastReplace(desc, "ORIGINALHOST", this.getOriginalHost().getName());
+                    desc = TextUtil.fastReplace(desc, "ORIGINALHOST", this.getOriginalHost().getDisplayName());
                 }
             }
             if (getHostCard().getEffectSource() != null) {
                 if (active)
                     desc = TextUtil.fastReplace(desc, "EFFECTSOURCE", getHostCard().getEffectSource().toString());
                 else
-                    desc = TextUtil.fastReplace(desc, "EFFECTSOURCE", getHostCard().getEffectSource().getName());
+                    desc = TextUtil.fastReplace(desc, "EFFECTSOURCE", getHostCard().getEffectSource().getDisplayName());
             }
             sb.append(desc);
             if (!this.triggerRemembered.isEmpty()) {
@@ -210,7 +212,7 @@ public abstract class Trigger extends TriggerReplacementBase {
                     saDesc = saDesc.substring(0, 1).toLowerCase() + saDesc.substring(1);
                 }
                 if (saDesc.contains("ORIGINALHOST") && sa.getOriginalHost() != null) {
-                    saDesc = TextUtil.fastReplace(saDesc, "ORIGINALHOST", sa.getOriginalHost().getName());
+                    saDesc = TextUtil.fastReplace(saDesc, "ORIGINALHOST", sa.getOriginalHost().getDisplayName());
                 }
             } else {
                 saDesc = "<take no action>"; // printed in case nothing is chosen for the ability (e.g. Charm with Up to X)
@@ -218,7 +220,7 @@ public abstract class Trigger extends TriggerReplacementBase {
             result = TextUtil.fastReplace(result, "ABILITY", saDesc);
 
             result = CardTranslation.translateMultipleDescriptionText(result, sa.getHostCard());
-            String translatedName = CardTranslation.getTranslatedName(sa.getHostCard());
+            String translatedName = sa.getHostCard().getTranslatedName();
             result = TextUtil.fastReplace(result,"CARDNAME", translatedName);
             result = TextUtil.fastReplace(result,"NICKNAME", Lang.getInstance().getNickName(translatedName));
         }
@@ -383,13 +385,29 @@ public abstract class Trigger extends TriggerReplacementBase {
                 return false;
             }
             // CR 702.100c
-            if (!moved.isCreature() || !this.getHostCard().isCreature()) {
+            if (!moved.isCreature() || !getHostCard().isCreature()) {
                 return false;
             }
-            if (moved.getNetPower() <= this.getHostCard().getNetPower()
-                    && moved.getNetToughness() <= this.getHostCard().getNetToughness()) {
+            if (moved.getNetPower() <= getHostCard().getNetPower()
+                    && moved.getNetToughness() <= getHostCard().getNetToughness()) {
                 return false;
             }
+        }
+        if (isKeyword(Keyword.INCREMENT)) {
+            if (!getHostCard().isCreature()) {
+                return false;
+            }
+            final SpellAbility sp = (SpellAbility) runParams.get(AbilityKey.SpellAbility);
+            final Player p = getHostCard().getController();
+            int v = (int) sp.getPayingMana().stream().filter(m ->  m.getPlayer().equals(p)).count();
+            if (v <= getHostCard().getNetPower()
+                    && v <= getHostCard().getNetToughness()) {
+                return false;
+            }
+        }
+
+        if (condition == null) {
+            return true;
         }
 
         if ("LifePaid".equals(condition)) {
@@ -409,7 +427,7 @@ public abstract class Trigger extends TriggerReplacementBase {
             final Player attackedP = (Player) attacked;
             int life = attackedP.getLife();
             boolean found = false;
-            for (Player opp : this.getHostCard().getController().getOpponents()) {
+            for (Player opp : getHostCard().getController().getOpponents()) {
                 if (opp.equals(attackedP)) {
                     continue;
                 }
@@ -443,6 +461,7 @@ public abstract class Trigger extends TriggerReplacementBase {
                 return false;
             }
         }
+        
         return true;
     }
 
@@ -504,8 +523,11 @@ public abstract class Trigger extends TriggerReplacementBase {
         this.id = id;
     }
 
-    public void addRemembered(Object o) {
+    public <T> void addRemembered(T o) {
         this.triggerRemembered.add(o);
+    }
+    public <T> void addRemembered(Collection<T> o) {
+        this.triggerRemembered.addAll(o);
     }
 
     @Override
@@ -532,11 +554,19 @@ public abstract class Trigger extends TriggerReplacementBase {
     }
 
     public final Trigger copy(Card newHost, boolean lki) {
+        return copy(newHost, lki, false, null);
+    }
+    public final Trigger copy(Card newHost, boolean lki, boolean keepTextChanges) {
+        return copy(newHost, lki, keepTextChanges, null);
+    }
+    public final Trigger copy(Card newHost, boolean lki, boolean keepTextChanges, SpellAbility spellAbility) {
         final Trigger copy = (Trigger) clone();
 
-        copyHelper(copy, newHost);
+        copyHelper(copy, newHost, lki || keepTextChanges);
 
-        if (getOverridingAbility() != null) {
+        if (spellAbility != null) {
+            copy.setOverridingAbility(spellAbility);
+        } else if (getOverridingAbility() != null) {
             copy.setOverridingAbility(getOverridingAbility().copy(newHost, lki));
         }
 
@@ -596,7 +626,11 @@ public abstract class Trigger extends TriggerReplacementBase {
     public SpellAbility ensureAbility(final IHasSVars sVarHolder) {
         SpellAbility sa = getOverridingAbility();
         if (sa == null && hasParam("Execute")) {
-            sa = AbilityFactory.getAbility(getHostCard(), getParam("Execute"), sVarHolder);
+            if (this.isIntrinsic() && sVarHolder instanceof CardState state) {
+                sa = state.getAbilityForTrigger(getParam("Execute"));
+            } else {
+                sa = AbilityFactory.getAbility(getHostCard(), getParam("Execute"), sVarHolder);
+            }
             setOverridingAbility(sa);
         }
         return sa;
@@ -636,5 +670,22 @@ public abstract class Trigger extends TriggerReplacementBase {
     }
     public boolean isLastChapter() {
         return isChapter() && getChapter() == getCardState().getFinalChapterNr();
+    }
+
+    @Override
+    public boolean isManaAbility() {
+        if (!TriggerType.TapsForMana.equals(getMode()) && !TriggerType.ManaAdded.equals(getMode())) {
+            return false;
+        }
+        return ensureAbility().isManaAbility();
+    }
+
+    public boolean looksBackInTime() {
+        return TriggerType.Exploited.equals(getMode()) ||
+                TriggerType.Destroyed.equals(getMode()) ||
+                TriggerType.Sacrificed.equals(getMode()) || TriggerType.SacrificedOnce.equals(getMode()) ||
+                ((TriggerType.ChangesZone.equals(getMode()) || TriggerType.ChangesZoneAll.equals(getMode()))
+                        && (StringUtils.contains(getParam("Origin"), "Battlefield") ||
+                        StringUtils.containsAny(getParam("Destination"), "Library", "Hand")));
     }
 }

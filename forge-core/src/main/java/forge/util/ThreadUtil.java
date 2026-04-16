@@ -1,17 +1,10 @@
 package forge.util;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class ThreadUtil {
     static {
-        System.out.printf("(ThreadUtil first call): Running on a machine with %d cpu core(s)%n", Runtime.getRuntime().availableProcessors() );
+        System.out.printf("(ThreadUtil first call): Running with priority %d%n", Thread.currentThread().getPriority());
     }
 
     private static class WorkerThreadFactory implements ThreadFactory {

@@ -17,15 +17,20 @@
  */
 package forge.localinstance.properties;
 
+import java.util.EnumSet;
+import java.util.Set;
+import java.util.StringJoiner;
+
 import forge.MulliganDefs;
 import forge.game.GameLogEntryType;
+import forge.game.GameLogVerbosity;
 
 public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
 
     /**
      * Preference identifiers and their default values.
      */
-    public enum FPref {
+    public enum FPref implements PreferencesStore.IPref {
         PLAYER_NAME (""),
         CONSTRUCTED_P1_DECK_STATE(""),
         CONSTRUCTED_P2_DECK_STATE(""),
@@ -80,14 +85,16 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
         UI_OVERLAY_CARD_NAME ("true"),
         UI_OVERLAY_CARD_POWER ("true"),
         UI_OVERLAY_CARD_MANA_COST ("true"),
+        UI_OVERLAY_CARD_PERPETUAL_MANA_COST ("true"),
         UI_OVERLAY_CARD_ID ("true"),
         UI_OVERLAY_ABILITY_ICONS("true"),
         UI_OVERLAY_DRAFT_RANKING("true"),
-        UI_ENABLE_ONLINE_IMAGE_FETCHER ("false"),
+        UI_ENABLE_ONLINE_IMAGE_FETCHER ("true"),
         UI_PREFERRED_ART("LATEST_ART_ALL_EDITIONS"),
         UI_SMART_CARD_ART("false"),
         UI_AUTO_AIDECK_SELECTION("true"),
         UI_DISABLE_CARD_IMAGES ("false"),
+        UI_REVERSE_PROMPT_BUTTON ("false"),
         UI_IMAGE_CACHE_MAXIMUM("400"),
         UI_OVERLAY_FOIL_EFFECT ("true"),
         UI_HIDE_REMINDER_TEXT ("false"),
@@ -96,6 +103,7 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
         UI_SR_OPTIMIZE ("false"),
         UI_OPEN_PACKS_INDIV ("false"),
         UI_STACK_CREATURES ("false"),
+        UI_TOKENS_IN_SEPARATE_ROW("false"),
         UI_UPLOAD_DRAFT ("false"),
         UI_SCALE_LARGER ("true"),
         UI_RENDER_BLACK_BORDERS ("true"),
@@ -110,11 +118,9 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
         UI_CARD_SIZE ("small"),
         UI_SINGLE_CARD_ZOOM("false"),
         UI_LIBGDX_TEXTURE_FILTERING("true"),
-        UI_BUGZ_NAME (""),
-        UI_BUGZ_PWD (""),
         UI_ANTE ("false"),
         UI_ANTE_MATCH_RARITY ("false"),
-        UI_MANABURN("false"),
+        UI_ANTE_INCLUDE_BASIC_LANDS ("false"),
         UI_SKIN ("Default"),
         UI_CJK_FONT (""),
         UI_PREFERRED_AVATARS_ONLY ("false"),
@@ -133,12 +139,13 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
         UI_THEMED_COMBOBOX ("true"), // Now applies to all theme settings, not just Combo.
         UI_LOCK_TITLE_BAR ("false"),
         UI_HIDE_GAME_TABS ("false"), // Visibility of tabs in match screen.
+        UI_MULTIPLAYER_FIELD_LAYOUT ("OFF"),
+        UI_MULTIPLAYER_FIELD_PANELS ("SPLIT"),
         UI_CLOSE_ACTION ("NONE"),
         UI_MANA_LOST_PROMPT ("false"), // Prompt on losing mana when passing priority
         UI_STACK_EFFECT_NOTIFICATION_POLICY ("Never"),
         UI_LAND_PLAYED_NOTIFICATION_POLICY ("Never"),
         UI_PAUSE_WHILE_MINIMIZED("false"),
-        UI_TOKENS_IN_SEPARATE_ROW("false"), // Display tokens in their own battlefield row.
         UI_DISPLAY_CURRENT_COLORS(ForgeConstants.DISP_CURRENT_COLORS_NEVER),
         UI_FILTER_LANDS_BY_COLOR_IDENTITY("true"),
         UI_ALLOW_ESC_TO_END_TURN ("false"),
@@ -176,21 +183,26 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
     	UI_SELECT_FROM_CARD_DISPLAYS("true"),
         UI_FOR_TOUCHSCREN("false"),
         UI_SWITCH_STATES_DECKVIEW("Switch back on hover"),
+        UI_ORDER_HAND("false"),
+        UI_HAND_MAX_CARDS_PER_ROW("0"),
+        UI_HAND_NO_OVERLAP("false"),
+        UI_ZONE_TAB_NEW_COUNT("false"),
+        UI_ENABLE_AI_PICKER("false"),
 
+        UI_VIBRATE_INTENSITY("100"),
         UI_VIBRATE_ON_LIFE_LOSS("true"),
         UI_VIBRATE_ON_LONG_PRESS("true"),
+        UI_VIBRATE_ON_ENEMY_ENCOUNTER("true"),
+        UI_VIBRATE_ON_ADVENTURE_REWARD("true"),
+        UI_VIBRATE_ON_SHOP_ACTION("true"),
 
         UI_LANGUAGE("en-US"),
 
-        /** This is used to disable the future version compatibility warning dialog for Java 8. */
-        //TODO This should be removed after the update that requires Java 8.
-        DISABLE_DISPLAY_JAVA_8_UPDATE_WARNING("false"),
-
         AUTO_UPDATE("none"),
         USE_SENTRY("false"), // this controls whether automated bug reporting is done or not
+        CHECK_SNAPSHOT_AT_STARTUP("true"),
 
         MATCH_HOT_SEAT_MODE("false"), //this only applies to mobile game
-        MATCHPREF_PROMPT_FREE_BLOCKS("false"),
 
         NEW_GAME_SCREEN("Constructed"),
         LOAD_GAME_SCREEN("BoosterDraft"),
@@ -207,17 +219,24 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
 
         MATCH_AI_SIDEBOARDING_MODE("Human For AI"),
         MATCH_EXPERIMENTAL_RESTORE("false"),
+        MATCH_AI_TIMEOUT("5"),
         ENFORCE_DECK_LEGALITY ("true"),
         PERFORMANCE_MODE ("false"),
         FILTERED_HANDS ("false"),
         MULLIGAN_RULE(MulliganDefs.getDefaultRule().name()),
 
+        UI_MANABURN("false"),
+        LEGACY_ORDER_COMBATANTS("false"),
+
         DEV_MODE_ENABLED ("false"),
         DEV_WORKSHOP_SYNTAX ("false"),
-        DEV_LOG_ENTRY_TYPE (GameLogEntryType.DAMAGE.toString()),
+        DEV_LOG_ENTRY_TYPE (GameLogVerbosity.MEDIUM.name()),
+        DEV_LOG_CUSTOM_TYPES (defaultCustomLogTypes()),
+        UI_LOG_SHOW_CARD_IMAGES ("true"),
 
         LOAD_CARD_SCRIPTS_LAZILY ("false"),
         LOAD_ARCHIVED_FORMATS ("false"),
+        PRELOAD_CUSTOM_DRAFTS ("false"),
 
         DECK_DEFAULT_CARD_LIMIT ("4"),
         DECKGEN_SINGLETONS ("false"),
@@ -229,7 +248,7 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
         PHASE_AI_DRAW ("false"),
         PHASE_AI_MAIN1 ("false"),
         PHASE_AI_BEGINCOMBAT ("true"),
-        PHASE_AI_DECLAREATTACKERS ("false"),
+        PHASE_AI_DECLAREATTACKERS ("true"),
         PHASE_AI_DECLAREBLOCKERS ("true"),
         PHASE_AI_FIRSTSTRIKE ("false"),
         PHASE_AI_COMBATDAMAGE ("false"),
@@ -250,6 +269,7 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
         PHASE_HUMAN_MAIN2 ("true"),
         PHASE_HUMAN_EOT ("false"),
         PHASE_HUMAN_CLEANUP ("false"),
+        PROMPT_FOR_AUTOSELL ("true"),
 
         ZONE_LOC_HUMAN_HAND(""),
         ZONE_LOC_HUMAN_LIBRARY(""),
@@ -269,21 +289,30 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
         ZONE_LOC_AI_ANTE(""),
         ZONE_LOC_AI_SIDEBOARD(""),
 
+        UI_ZONE_DOCK_ZONES(""),
+        UI_ZONE_DOCK_ZONES_OTHER(""),
+
         CHAT_WINDOW_LOC(""),
 
         SHORTCUT_SHOWSTACK ("83"),
         SHORTCUT_SHOWCOMBAT ("67"),
         SHORTCUT_SHOWCONSOLE ("76"),
         SHORTCUT_SHOWDEV ("68"),
-        SHORTCUT_CONCEDE ("17"),
-        SHORTCUT_ENDTURN ("69"),
-        SHORTCUT_ALPHASTRIKE ("65"),
+        SHORTCUT_UNDO ("17 90"),
+        SHORTCUT_CONCEDE ("17 81"),
+        SHORTCUT_ENDTURN ("17 69"),
+        SHORTCUT_ALPHASTRIKE ("17 65"),
         SHORTCUT_SHOWTARGETING ("84"),
         SHORTCUT_AUTOYIELD_ALWAYS_YES ("89"),
         SHORTCUT_AUTOYIELD_ALWAYS_NO ("78"),
         SHORTCUT_MACRO_RECORD ("16 82"),
         SHORTCUT_MACRO_NEXT_ACTION ("16 50"),
-        SHORTCUT_CARD_ZOOM("90");
+        SHORTCUT_CARD_ZOOM("90"),
+        SHORTCUT_SHOWHOTKEYS("72"),
+        SHORTCUT_PANELTABS("17 84"),
+        SHORTCUT_CARDOVERLAYS("17 79"),
+
+        LAST_IMPORTED_CUBE_ID("");
 
         private final String strDefaultVal;
 
@@ -291,8 +320,17 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
             this.strDefaultVal = s0;
         }
 
+        @Override
         public String getDefault() {
             return strDefaultVal;
+        }
+
+        private static String defaultCustomLogTypes() {
+            StringJoiner sj = new StringJoiner(",");
+            for (GameLogEntryType t : GameLogEntryType.values()) {
+                sj.add(t.name());
+            }
+            return sj.toString();
         }
 
         public static FPref[] CONSTRUCTED_DECK_STATES = {
@@ -325,11 +363,52 @@ public class ForgePreferences extends PreferencesStore<ForgePreferences.FPref> {
                 BRAWL_P5_DECK_STATE, BRAWL_P6_DECK_STATE,
                 BRAWL_P7_DECK_STATE, BRAWL_P8_DECK_STATE };
 
+        /** Phase stop prefs in PhaseType order (UPKEEP through CLEANUP, skipping UNTAP). */
+        public static FPref[] PHASES_AI = {
+                PHASE_AI_UPKEEP, PHASE_AI_DRAW, PHASE_AI_MAIN1,
+                PHASE_AI_BEGINCOMBAT, PHASE_AI_DECLAREATTACKERS,
+                PHASE_AI_DECLAREBLOCKERS, PHASE_AI_FIRSTSTRIKE,
+                PHASE_AI_COMBATDAMAGE, PHASE_AI_ENDCOMBAT,
+                PHASE_AI_MAIN2, PHASE_AI_EOT, PHASE_AI_CLEANUP };
+        public static FPref[] PHASES_HUMAN = {
+                PHASE_HUMAN_UPKEEP, PHASE_HUMAN_DRAW, PHASE_HUMAN_MAIN1,
+                PHASE_HUMAN_BEGINCOMBAT, PHASE_HUMAN_DECLAREATTACKERS,
+                PHASE_HUMAN_DECLAREBLOCKERS, PHASE_HUMAN_FIRSTSTRIKE,
+                PHASE_HUMAN_COMBATDAMAGE, PHASE_HUMAN_ENDCOMBAT,
+                PHASE_HUMAN_MAIN2, PHASE_HUMAN_EOT, PHASE_HUMAN_CLEANUP };
+
     }
 
     /** Instantiates a ForgePreferences object. */
     public ForgePreferences() {
         super(ForgeConstants.MAIN_PREFS_FILE, FPref.class);
+    }
+
+    /** Parse the custom log types preference into a Set. */
+    public Set<GameLogEntryType> getCustomLogTypes() {
+        final String stored = getPref(FPref.DEV_LOG_CUSTOM_TYPES);
+        if (stored == null || stored.isEmpty()) {
+            return EnumSet.allOf(GameLogEntryType.class);
+        }
+        final EnumSet<GameLogEntryType> types = EnumSet.noneOf(GameLogEntryType.class);
+        for (String name : stored.split(",")) {
+            try {
+                types.add(GameLogEntryType.valueOf(name.trim()));
+            } catch (IllegalArgumentException ignored) {}
+        }
+        return types;
+    }
+
+    /** Serialize and save the custom log types preference. */
+    public void setCustomLogTypes(final Set<GameLogEntryType> types) {
+        final StringJoiner sj = new StringJoiner(",");
+        for (GameLogEntryType t : GameLogEntryType.values()) {
+            if (types.contains(t)) {
+                sj.add(t.name());
+            }
+        }
+        setPref(FPref.DEV_LOG_CUSTOM_TYPES, sj.toString());
+        save();
     }
 
     @Override

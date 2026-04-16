@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.jupnp.UpnpServiceConfiguration;
 import org.robovm.apple.foundation.NSAutoreleasePool;
 import org.robovm.apple.uikit.UIApplication;
 import org.robovm.apple.uikit.UIPasteboard;
@@ -28,7 +30,7 @@ public class Main extends IOSApplication.Delegate {
         final IOSApplicationConfiguration config = new IOSApplicationConfiguration();
         config.useAccelerometer = false;
         config.useCompass = false;
-        final ApplicationListener app = Forge.getApp(new IOSClipboard(), new IOSAdapter(), assetsDir, false, false, 0, false, 0, "", "");
+        final ApplicationListener app = Forge.getApp(null, new IOSClipboard(), new IOSAdapter(), assetsDir, false, false, false, 0);
         final IOSApplication iosApp = new IOSApplication(app, config);
         return iosApp;
     }
@@ -79,6 +81,16 @@ public class Main extends IOSApplication.Delegate {
         }
 
         @Override
+        public String getLatestChanges(String commitsAtom, Date buildDateOriginal, Date maxDate) {
+            return "";
+        }
+
+        @Override
+        public String getReleaseTag(String releaseAtom) {
+            return "";
+        }
+
+        @Override
         public boolean openFile(final String filename) {
             return new IOSFiles().local(filename).exists();
         }
@@ -126,6 +138,22 @@ public class Main extends IOSApplication.Delegate {
         @Override
         public ArrayList<String> getGamepads() {
             return new ArrayList<>();
+        }
+
+        @Override
+        public UpnpServiceConfiguration getUpnpPlatformService() {
+            // not used
+            return null;
+        }
+
+        @Override
+        public boolean needFileAccess() {
+            return false;
+        }
+
+        @Override
+        public void requestFileAcces() {
+
         }
     }
 }

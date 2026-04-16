@@ -1,14 +1,6 @@
 package forge.gamemodes.match.input;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
-
 import com.google.common.collect.Lists;
-
 import forge.ai.ComputerUtilMana;
 import forge.ai.PlayerControllerAi;
 import forge.card.ColorSet;
@@ -18,7 +10,9 @@ import forge.game.Game;
 import forge.game.GameActionUtil;
 import forge.game.card.Card;
 import forge.game.mana.ManaCostBeingPaid;
+import forge.game.player.PlaySpellAbility;
 import forge.game.player.Player;
+import forge.game.player.PlayerController.FullControlFlag;
 import forge.game.player.PlayerView;
 import forge.game.player.actions.PayManaFromPoolAction;
 import forge.game.spellability.AbilityManaPart;
@@ -26,12 +20,13 @@ import forge.game.spellability.SpellAbility;
 import forge.game.spellability.SpellAbilityView;
 import forge.gui.FThreads;
 import forge.gui.GuiBase;
-import forge.player.HumanPlay;
 import forge.player.PlayerControllerHuman;
 import forge.util.Evaluator;
 import forge.util.ITriggerEvent;
 import forge.util.Localizer;
 import forge.util.TextUtil;
+
+import java.util.*;
 
 public abstract class InputPayMana extends InputSyncronizedBase {
     private static final long serialVersionUID = 718128600948280315L;
@@ -136,7 +131,7 @@ public abstract class InputPayMana extends InputSyncronizedBase {
     public String getActivateAction(Card card) {
         for (SpellAbility sa : getAllManaAbilities(card)) {
             if (sa.canPlay()) {
-                return "pay mana with card";
+                return Localizer.getInstance().getMessage("lblPayManaWithCard");
             }
         }
         return null;
@@ -251,10 +246,8 @@ public abstract class InputPayMana extends InputSyncronizedBase {
                 int maAmount = ma.totalAmountOfManaGenerated(saPaidFor, true);
                 if (amountOfMana == -1) {
                     amountOfMana = maAmount;
-                } else {
-                    if (amountOfMana != maAmount) {
-                        guessAbilityWithRequiredColors = false;
-                    }
+                } else if (amountOfMana != maAmount) {
+                    guessAbilityWithRequiredColors = false;
                 }
 
                 abilitiesMap.put(ma.getView(), ma);
@@ -283,7 +276,7 @@ public abstract class InputPayMana extends InputSyncronizedBase {
 
             // If the card has any ability that tracks mana spent, skip express Mana choice
             if (saPaidFor.tracksManaSpent()) {
-                colorCanUse = ColorSet.ALL_COLORS.getColor();
+                colorCanUse = ColorSet.WUBRG.getColor();
                 guessAbilityWithRequiredColors = false;
             }
 
@@ -295,8 +288,7 @@ public abstract class InputPayMana extends InputSyncronizedBase {
                     //avoid unnecessary prompt by pretending we need White
                     //for the sake of "Add one mana of any color" effects
                     colorNeeded = MagicColor.WHITE;
-                }
-                else {
+                } else {
                     final HashMap<SpellAbilityView, SpellAbility> colorMatches = new HashMap<>();
                     for (SpellAbility sa : abilitiesMap.values()) {
                         if (sa.isManaAbilityFor(saPaidFor, colorNeeded)) {
@@ -339,7 +331,7 @@ public abstract class InputPayMana extends InputSyncronizedBase {
 
         locked = true;
         game.getAction().invoke(() -> {
-            if (HumanPlay.playSpellAbility(getController(), chosen.getActivatingPlayer(), chosen)) {
+            if (PlaySpellAbility.playSpellAbility(getController(), chosen.getActivatingPlayer(), chosen)) {
                 final List<AbilityManaPart> manaAbilities = chosen.getAllManaParts();
                 boolean restrictionsMet = true;
 
@@ -350,7 +342,7 @@ public abstract class InputPayMana extends InputSyncronizedBase {
                     }
                 }
 
-                if (restrictionsMet && !player.getController().isFullControl()) {
+                if (restrictionsMet && !player.getController().isFullControl(FullControlFlag.NoPaymentFromManaAbility)) {
                     player.getManaPool().payManaFromAbility(saPaidFor, manaCost, chosen);
                 }
                 if (!restrictionsMet || chosen.getPayCosts().hasManaCost()) {

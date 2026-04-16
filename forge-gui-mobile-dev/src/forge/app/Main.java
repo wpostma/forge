@@ -2,11 +2,9 @@ package forge.app;
 
 import com.badlogic.gdx.Gdx;
 import forge.interfaces.IDeviceAdapter;
-import forge.util.BuildInfo;
-import forge.util.FileUtil;
-import forge.util.OperatingSystem;
-import forge.util.RestartUtil;
+import forge.util.*;
 import org.apache.commons.lang3.tuple.Pair;
+import org.jupnp.UpnpServiceConfiguration;
 
 import javax.imageio.ImageIO;
 import java.awt.Desktop;
@@ -17,14 +15,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Optional;
 
 public class Main {
     private static final String versionString = BuildInfo.getVersionString();
     public static void main(String[] args) {
-        new GameLauncher(versionString);
+        if (!OperatingSystem.isWindows()) {
+            /* Prevents crash on non Windows OS before creating the LWJGL3 window.
+               It seems it defeats the purpose of having a splash image since
+               this is an indicator if the LWJGL3 has booted up succesfully. */
+            closeSplash();
+        }
+        new GameLauncher(versionString, args);
     }
-
+    public static void closeSplash() {
+        try {
+            Optional.ofNullable(SplashScreen.getSplashScreen()).ifPresent(SplashScreen::close);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     public static class DesktopAdapter implements IDeviceAdapter {
         private final String switchOrientationFile;
 
@@ -54,9 +65,27 @@ public class Main {
         }
 
         @Override
+        public String getLatestChanges(String commitsAtom, Date buildDateOriginal, Date max) {
+            return RSSReader.getCommitLog(commitsAtom, buildDateOriginal, max);
+        }
+
+        @Override
+        public String getReleaseTag(String releaseAtom) {
+            return RSSReader.getLatestReleaseTag(releaseAtom);
+        }
+
+        @Override
         public boolean openFile(String filename) {
             try {
-                Desktop.getDesktop().open(new File(filename));
+                File installer = new File(filename);
+                if (installer.exists()) {
+                    if (filename.endsWith(".jar")) {
+                        installer.setExecutable(true, false);
+                        Desktop.getDesktop().open(installer);
+                    } else {
+                        Desktop.getDesktop().open(installer.getParentFile());
+                    }
+                }
                 return true;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -80,12 +109,7 @@ public class Main {
 
         @Override
         public void closeSplashScreen() {
-            //could throw exception..
-            try {
-                Optional.ofNullable(SplashScreen.getSplashScreen()).ifPresent(SplashScreen::close);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            closeSplash();
         }
 
         @Override
@@ -122,6 +146,22 @@ public class Main {
         @Override
         public ArrayList<String> getGamepads() {
             return new ArrayList<>();
+        }
+
+        @Override
+        public UpnpServiceConfiguration getUpnpPlatformService() {
+            // shouldn't be reached
+            return null;
+        }
+
+        @Override
+        public boolean needFileAccess() {
+            return false;
+        }
+
+        @Override
+        public void requestFileAcces() {
+
         }
     }
 }

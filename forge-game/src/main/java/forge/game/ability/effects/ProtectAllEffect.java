@@ -15,11 +15,11 @@ import forge.game.ability.SpellAbilityEffect;
 import forge.game.card.Card;
 import forge.game.card.CardCollectionView;
 import forge.game.card.CardLists;
+import forge.game.event.GameEventCardStatsChanged;
 import forge.game.player.Player;
 import forge.game.spellability.SpellAbility;
 import forge.game.zone.ZoneType;
 import forge.util.Lang;
-import forge.util.Localizer;
 import forge.util.TextUtil;
 
 public class ProtectAllEffect extends SpellAbilityEffect {
@@ -52,7 +52,7 @@ public class ProtectAllEffect extends SpellAbilityEffect {
         final List<String> gains = new ArrayList<>();
         if (isChoice) {
             Player choser = sa.getActivatingPlayer();
-            final String choice = choser.getController().chooseProtectionType(Localizer.getInstance().getMessage("lblChooseAProtection"), sa, choices);
+            final String choice = choser.getController().chooseProtectionType(sa, choices);
             if( null == choice)
                 return;
             gains.add(choice);
@@ -87,6 +87,7 @@ public class ProtectAllEffect extends SpellAbilityEffect {
 
             for (final Card tgtC : list) {
                 tgtC.addChangedCardKeywords(gainsKWList, null, false, timestamp, null, true);
+                game.fireEvent(new GameEventCardStatsChanged(tgtC));
 
                 if (!"Permanent".equals(sa.getParam("Duration"))) {
                     // If not Permanent, remove protection at EOT
@@ -97,6 +98,7 @@ public class ProtectAllEffect extends SpellAbilityEffect {
                         public void run() {
                             if (tgtC.isInPlay()) {
                                 tgtC.removeChangedCardKeywords(timestamp, 0, true);
+                                game.fireEvent(new GameEventCardStatsChanged(tgtC));
                             }
                         }
                     };

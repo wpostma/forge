@@ -17,8 +17,6 @@
  */
 package forge.gamemodes.match.input;
 
-import java.util.List;
-
 import forge.game.card.Card;
 import forge.game.card.CardView;
 import forge.game.combat.Combat;
@@ -33,6 +31,8 @@ import forge.player.PlayerControllerHuman;
 import forge.util.ITriggerEvent;
 import forge.util.Localizer;
 import forge.util.ThreadUtil;
+
+import java.util.List;
 
 /**
  * <p>
@@ -78,13 +78,13 @@ public class InputBlock extends InputSyncronizedBase {
         if (currentAttacker == null) {
             showMessage(localizer.getMessage("lblSelectBlockTarget"));
         } else {
-            String attackerName = currentAttacker.isFaceDown() ? localizer.getMessage("lblMorph") : currentAttacker.getName() + " (" + currentAttacker.getId() + ")";
+            String attackerName = currentAttacker.isFaceDown() ? localizer.getMessage("lblMorph") : currentAttacker.getDisplayName() + " (" + currentAttacker.getId() + ")";
             String message = localizer.getMessage("lblSelectBlocker") + attackerName + " " + localizer.getMessage("lblOrSelectBlockTarget");
             showMessage(message);
         }
 
         if (combat != null)
-            getController().getGame().fireEvent(new GameEventCombatUpdate(combat.getAttackers(), combat.getAllBlockers()));
+            getController().getGame().fireEvent(GameEventCombatUpdate.fromCards(combat.getAttackers(), combat.getAllBlockers()));
 
         getController().getGui().showCombat();
     }
@@ -129,8 +129,7 @@ public class InputBlock extends InputSyncronizedBase {
                         if (isCorrectAction) {
                             combat.addBlocker(currentAttacker, card);
                             card.getGame().getMatch().fireEvent(new UiEventBlockerAssigned(
-                                    CardView.get(card),
-                                    CardView.get(currentAttacker)));
+                                    CardView.get(card), CardView.get(currentAttacker)));
                         }
                     }
                 }
@@ -148,23 +147,26 @@ public class InputBlock extends InputSyncronizedBase {
     @Override
     public String getActivateAction(Card card) {
         if (combat.isAttacking(card)) {
-            return "declare blockers for card";
+            return Localizer.getInstance().getMessage("lblDeclareBlockersForCard");
         }
         if (currentAttacker != null && card.isCreature() && defender.getZone(ZoneType.Battlefield).contains(card)) {
             if (combat.isBlocking(card, currentAttacker)) {
-                return "remove card from combat";
+                return Localizer.getInstance().getMessage("lblRemoveFromCombat");
             }
             if (CombatUtil.canBlock(currentAttacker, card, combat)) {
-                return "block with card";
+                return Localizer.getInstance().getMessage("lblBlockWithCard");
             }
         }
         return null;
     }
 
     private void setCurrentAttacker(final Card card) {
+        if (currentAttacker != null) {
+            getController().getGui().setHighlighted(CardView.get(currentAttacker), false);
+        }
         currentAttacker = card;
-        for (final Card c : combat.getAttackers()) {
-            getController().getGui().setUsedToPay(CardView.get(c), card == c);
+        if (card != null) {
+            getController().getGui().setHighlighted(CardView.get(card), true);
         }
     }
 }

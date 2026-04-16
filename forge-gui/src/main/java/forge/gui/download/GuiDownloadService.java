@@ -17,28 +17,7 @@
  */
 package forge.gui.download;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ConnectException;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
-import java.net.Proxy;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.lang3.tuple.Pair;
-
-import com.esotericsoftware.minlog.Log;
+import org.tinylog.Logger;
 
 import forge.gui.FThreads;
 import forge.gui.GuiBase;
@@ -51,6 +30,16 @@ import forge.localinstance.properties.ForgeConstants;
 import forge.util.FileUtil;
 import forge.util.HttpUtil;
 import forge.util.TextUtil;
+import org.apache.commons.lang3.tuple.Pair;
+
+import java.io.*;
+import java.net.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @SuppressWarnings("serial")
 public abstract class GuiDownloadService implements Runnable {
@@ -341,7 +330,7 @@ public abstract class GuiDownloadService implements Runnable {
                 System.out.printf((formatStr) + "%n", fileDest.getName(), url, fnfe.getMessage());
             }
             catch (final Exception ex) {
-                Log.error("LQ Pictures", "Error downloading pictures", ex);
+                Logger.error(ex, "Error downloading pictures");
             }
             finally {
                 if (fos != null) {

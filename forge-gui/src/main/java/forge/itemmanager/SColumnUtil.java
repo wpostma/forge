@@ -105,6 +105,8 @@ public final class SColumnUtil {
 
     public static Map<ColumnDef, ItemColumnConfig> getDeckEditorDefaultColumns() {
         Map<ColumnDef, ItemColumnConfig> columns = getCardColumns(ColumnDef.DECK_QUANTITY, false);
+        columns.put(ColumnDef.DECK_KEY_CARD, new ItemColumnConfig(ColumnDef.DECK_KEY_CARD));
+        columns.get(ColumnDef.DECK_KEY_CARD).setIndex(columns.size() - 1);
         columns.get(ColumnDef.CMC).setSortPriority(1);
         columns.get(ColumnDef.TYPE).setSortPriority(2);
         columns.get(ColumnDef.NAME).setSortPriority(3);
@@ -140,6 +142,15 @@ public final class SColumnUtil {
         Map<ColumnDef, ItemColumnConfig> columns = getColumns(colDefs);
         columns.get(ColumnDef.FAVORITE).setSortPriority(1);
         columns.get(ColumnDef.NAME).setSortPriority(2);
+        return columns;
+    }
+
+    public static Map<ColumnDef, ItemColumnConfig> getAdventureCollectionDefaultColumns() {
+        Map<ColumnDef, ItemColumnConfig> columns = getCardColumns(ColumnDef.QUANTITY, true, false, true, true, false);
+        columns.get(ColumnDef.NEW).setSortPriority(1);
+        columns.get(ColumnDef.FAVORITE).setSortPriority(2);
+        columns.get(ColumnDef.NAME).setSortPriority(3);
+        columns.get(ColumnDef.PRICE).setSortPriority(4);
         return columns;
     }
 
