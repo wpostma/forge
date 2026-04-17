@@ -1702,6 +1702,12 @@ public class PlayerControllerHuman extends PlayerController implements IGameCont
     @Override
     public void notifyOfValue(final SpellAbility sa, final GameObject realtedTarget, final String value) {
         final String message = MessageUtil.formatNotificationMessage(sa, player, realtedTarget, value);
+
+        if (FModel.getPreferences().getPrefBoolean(FPref.DEV_MODE_ENABLED)) {
+            System.out.println("PlayerControllerHuman.notifyOfValue " + message );
+        }
+        // Log all notifications to the game log for traceability
+        getGame().getGameLog().add(GameLogEntryType.INFORMATION, message);
         if (sa != null && sa.isManaAbility()) {
             getGame().fireEvent(new GameEventAddLog(GameLogEntryType.LAND, message));
         } else {

@@ -19,6 +19,31 @@ Join the **Forge community** on [Discord](https://discord.gg/HcPJNyD66a)!
 - **🌐 Cross-Platform Support:** Play on **Windows, Mac, Linux,** and **Android**.
 - **🔧 Extensible Architecture:** Built in **Java**, Forge encourages developers to contribute by adding features and cards.
 - **🎮 Versatile Gameplay:** Dive into single-player modes or challenge opponents online!
+- **📐 Auto-Sizing Main UI Elements:** Match prompt panels now auto-size key UI content (header, prompt text, and action buttons) for high-DPI and larger UI scale setups.
+
+---
+
+## 🧪 Forge UI Tests Tool (Developer)
+
+Forge includes a desktop harness for validating prompt rendering and scaling behavior:
+
+- **Tool Class:** `forge.test.toolbox.FHtmlViewerZoomHarness`
+- **Window Caption:** `Forge UI Tests Tool`
+- **Coverage:** Prompt text sizing, zoom fitting, symbol rendering, and cache validation flows.
+
+### Build the Tool
+
+```powershell
+mvn -pl forge-gui-test -am -DskipTests package
+```
+
+### Run the Tool
+
+```powershell
+java -jar forge-gui-test\target\forge-gui-test-2.0.12-SNAPSHOT-jar-with-dependencies.jar
+```
+
+Use the harness buttons to quickly test prompt content presets and cache operations while reviewing auto-sizing behavior in the main match UI.
 
 ---
 

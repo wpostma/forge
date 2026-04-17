@@ -322,6 +322,11 @@ public class VPrompt implements IVDoc<CPrompt> {
     }
 
     private void fitPromptText() {
+        // Hide the viewer during zoom fitting to prevent flicker
+        tarMessage.setVisible(false);
         tarMessage.fitZoomTo(messageScroller.getViewport().getExtentSize());
+        // Show the viewer only after zoom is finalized and content fits
+        tarMessage.setVisible(true);
+        tarMessage.repaint();
     }
 }

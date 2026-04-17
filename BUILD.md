@@ -35,9 +35,17 @@ Common developer builds:
 mvn clean install
 mvn -pl forge-gui-desktop -am -DskipTests compile
 mvn -pl forge-gui-desktop -am package
+mvn -pl forge-gui-test -am -DskipTests compile
+mvn -pl forge-gui-test -am -DskipTests package
 mvn -pl forge-game test
 mvn -pl forge-core,forge-game,forge-ai install
 ```
+
+GUI test harness artifact note:
+
+- `compile` updates classes under `forge-gui-test/target/classes`.
+- `compile` does **not** refresh `forge-gui-test/target/forge-gui-test-2.0.12-SNAPSHOT-jar-with-dependencies.jar`.
+- Run `mvn -pl forge-gui-test -am -DskipTests package` whenever you need a fresh runnable harness fat jar.
 
 Notes:
 
@@ -58,6 +66,7 @@ forge-gui
 forge-gui-mobile
 forge-gui-mobile-dev
 forge-gui-desktop
+forge-gui-test
 forge-gui-ios
 forge-lda
 adventure-editor
