@@ -147,10 +147,12 @@ public class CPrompt implements ICDoc {
     public void setMessage(final String header) {
         view.getTarMessage().setText(FSkin.encodeSymbols(header, false));
         view.setCardView(null);
+        view.announceNewQuestion();
     }
     public void setMessage(final String s0, final CardView card) {
     	view.getTarMessage().setText(FSkin.encodeSymbols(s0, false));
     	view.setCardView(card);
+        view.announceNewQuestion();
     }
 
     /**

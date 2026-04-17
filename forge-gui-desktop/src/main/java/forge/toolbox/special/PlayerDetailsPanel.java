@@ -129,6 +129,10 @@ public class PlayerDetailsPanel extends JPanel {
         return zoneLabels.get(ZoneType.Library);
     }
 
+    public Component getZoneLabel(final ZoneType zoneType) {
+        return zoneLabels.get(zoneType);
+    }
+
     /**
      * Handles observer update of player Zones - hand, graveyard, etc.
      */

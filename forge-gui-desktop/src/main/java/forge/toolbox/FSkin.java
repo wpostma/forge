@@ -126,6 +126,9 @@ public class FSkin {
 
     public static final int SYMBOL_WIDTH = 13;
     public static final int SYMBOL_HEIGHT = 13;
+    private static final int ENCODED_SYMBOL_IMAGE_SCALE = 4;
+    private static final int ENCODED_SYMBOL_IMAGE_WIDTH = SYMBOL_WIDTH * ENCODED_SYMBOL_IMAGE_SCALE;
+    private static final int ENCODED_SYMBOL_IMAGE_HEIGHT = SYMBOL_HEIGHT * ENCODED_SYMBOL_IMAGE_SCALE;
 
     /**
      * Retrieves a color from this skin's color map.
@@ -1084,7 +1087,8 @@ public class FSkin {
 
     private static void addEncodingSymbol(final String key, final FSkinProp skinProp) {
         final String path = ForgeConstants.CACHE_SYMBOLS_DIR + "/" + key.replace("/", "") + ".png";
-        getImage(skinProp).save(path, SYMBOL_WIDTH, SYMBOL_HEIGHT);
+        // HTML still lays symbols out at SYMBOL_WIDTH x SYMBOL_HEIGHT; keep more pixels in the cache for zoomed viewers.
+        getImage(skinProp).save(path, ENCODED_SYMBOL_IMAGE_WIDTH, ENCODED_SYMBOL_IMAGE_HEIGHT);
     }
 
     public static String encodeSymbols(String str, final boolean formatReminderText) {

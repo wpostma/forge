@@ -18,13 +18,19 @@
 package forge.view.arcane;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.util.*;
 
+import javax.swing.JLayeredPane;
+import javax.swing.SwingUtilities;
+
 import com.google.common.collect.Lists;
 
+import forge.Singletons;
 import forge.game.card.CardView;
 import forge.game.card.CardView.CardStateView;
 import forge.game.player.PlayerView;
@@ -33,6 +39,7 @@ import forge.gui.FThreads;
 import forge.localinstance.properties.ForgePreferences.FPref;
 import forge.model.FModel;
 import forge.screens.match.CMatchUI;
+import forge.screens.match.views.VField;
 import forge.toolbox.FScrollPane;
 import forge.toolbox.MouseTriggerEvent;
 import forge.view.arcane.util.Animation;
@@ -767,15 +774,49 @@ public class PlayArea extends CardPanelContainer implements CardPanelMouseListen
 
         invalidate(); //pfps do the extra invalidate before any scrolling 
         if (!newPanels.isEmpty()) {
+            final boolean animateNewPanels = zone == ZoneType.Battlefield && !oldCards.isEmpty();
             int i = newPanels.size();
             for (final CardPanel toPanel : newPanels) {
                 if ( --i == 0 ) { // only scroll to last panel to be added
                     scrollRectToVisible(new Rectangle(toPanel.getCardX(), toPanel.getCardY(), toPanel.getCardWidth(), toPanel.getCardHeight()));
                 }
-                Animation.moveCard(toPanel);
+                animateNewPanel(toPanel, animateNewPanels);
             }
         }
         repaint();
+    }
+
+    private void animateNewPanel(final CardPanel toPanel, final boolean animateNewPanels) {
+        if (!animateNewPanels || !getMatchUI().isCurrentScreen() || Singletons.getView().getFrame() == null
+                || !Singletons.getView().getFrame().isShowing()) {
+            Animation.moveCard(toPanel);
+            return;
+        }
+
+        final VField fieldView = getMatchUI().getFieldViewFor(model);
+        if (fieldView == null) {
+            Animation.moveCard(toPanel);
+            return;
+        }
+
+        final Component source = fieldView.getDetailsPanel().getZoneLabel(ZoneType.Hand);
+        final JLayeredPane layeredPane = Singletons.getView().getFrame().getLayeredPane();
+        if (source == null || source.getBounds().isEmpty() || layeredPane == null) {
+            Animation.moveCard(toPanel);
+            return;
+        }
+
+        final Point startCenter = SwingUtilities.convertPoint(source,
+                Math.round(source.getWidth() / 2.0f), Math.round(source.getHeight() / 2.0f), layeredPane);
+        final int startWidth = Math.max(12, Math.round(toPanel.getCardWidth() * 0.35f));
+        final int startHeight = Math.round(startWidth * CardPanel.ASPECT_RATIO);
+        final int startX = startCenter.x - Math.round(startWidth / 2.0f);
+        final int startY = startCenter.y - Math.round(startHeight / 2.0f);
+
+        final Point endPoint = SwingUtilities.convertPoint(this, toPanel.getCardLocation(), layeredPane);
+        final CardPanel animationPanel = new CardPanel(getMatchUI(), toPanel.getCard());
+        Animation.moveCard(startX, startY, startWidth, endPoint.x, endPoint.y, toPanel.getCardWidth(),
+                animationPanel, toPanel, layeredPane, 450);
     }
 
     public boolean updateCard(final CardView card, boolean fromRefresh) {

@@ -739,6 +739,7 @@ public final class CMatchUI
             btn2.setEnabled(enable2);
             btn1.setFocusable(enable1 && focus1);
             btn2.setFocusable(enable2 && !focus1);
+            cPrompt.getView().setNeedsAttention(enable1 || enable2, toFocus);
             // ensure we don't steal focus from an overlay
             if (toFocus != null && !FNetOverlay.SINGLETON_INSTANCE.getTxtInput().hasFocus() ) {
                 toFocus.requestFocus(); // focus here even if another window has focus - shouldn't have to do it this way but some popups grab window focus

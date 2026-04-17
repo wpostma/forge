@@ -33,6 +33,7 @@ Common developer builds:
 
 ```powershell
 mvn clean install
+mvn -pl forge-gui-desktop -am -DskipTests compile
 mvn -pl forge-gui-desktop -am package
 mvn -pl forge-game test
 mvn -pl forge-core,forge-game,forge-ai install

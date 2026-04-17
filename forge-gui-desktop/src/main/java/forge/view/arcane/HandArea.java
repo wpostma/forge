@@ -19,6 +19,7 @@ package forge.view.arcane;
 
 import java.awt.event.MouseEvent;
 
+import forge.game.player.PlayerView;
 import forge.localinstance.properties.ForgePreferences.FPref;
 import forge.model.FModel;
 import forge.screens.match.CMatchUI;
@@ -36,6 +37,8 @@ import forge.toolbox.MouseTriggerEvent;
 public class HandArea extends CardArea {
     /** Constant <code>serialVersionUID=7488132628637407745L</code>. */
     private static final long serialVersionUID = 7488132628637407745L;
+    private static final String LAND_LIMIT_REJECTED_MESSAGE = "You have already played all lands allowed this turn.";
+    private static final String PLAY_REJECTED_MESSAGE = "You can't do that right now.";
 
     /**
      * <p>
@@ -69,14 +72,32 @@ public class HandArea extends CardArea {
     /** {@inheritDoc} */
     @Override
     public final void mouseLeftClicked(final CardPanel panel, final MouseEvent evt) {
-        getMatchUI().getGameController().selectCard(panel.getCard(), null, new MouseTriggerEvent(evt));
+        if (!getMatchUI().getGameController().selectCard(panel.getCard(), null, new MouseTriggerEvent(evt))) {
+            showRejectedPlayFeedback(panel);
+        }
         super.mouseLeftClicked(panel, evt);
     }
 
     /** {@inheritDoc} */
     @Override
     public final void mouseRightClicked(final CardPanel panel, final MouseEvent evt) {
-        getMatchUI().getGameController().selectCard(panel.getCard(), null, new MouseTriggerEvent(evt));
+        if (!getMatchUI().getGameController().selectCard(panel.getCard(), null, new MouseTriggerEvent(evt))) {
+            showRejectedPlayFeedback(panel);
+        }
         super.mouseRightClicked(panel, evt);
+    }
+
+    private void showRejectedPlayFeedback(final CardPanel panel) {
+        getMatchUI().flashIncorrectAction();
+        final PlayerView controller = panel.getCard() == null ? null : panel.getCard().getController();
+        getMatchUI().showPromptMessage(controller, getRejectedPlayMessage(panel, controller));
+    }
+
+    private String getRejectedPlayMessage(final CardPanel panel, final PlayerView controller) {
+        if (panel.getCard() != null && panel.getCard().getCurrentState().isLand() && controller != null
+                && !controller.hasUnlimitedLandPlay() && controller.getNumLandThisTurn() >= controller.getMaxLandPlay()) {
+            return LAND_LIMIT_REJECTED_MESSAGE;
+        }
+        return PLAY_REJECTED_MESSAGE;
     }
 }
