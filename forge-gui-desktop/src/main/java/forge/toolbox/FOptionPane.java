@@ -15,6 +15,7 @@ import javax.swing.text.StyleConstants;
 import com.google.common.collect.ImmutableList;
 
 import forge.gui.FThreads;
+import forge.localinstance.properties.ForgePreferences;
 import forge.localinstance.skin.FSkinProp;
 import forge.toolbox.FSkin.SkinImage;
 import forge.util.Localizer;
@@ -49,6 +50,7 @@ public class FOptionPane extends FDialog {
     }
 
     public static void showMessageDialog(final String message, final String title, final SkinImage icon) {
+        logDialogEvent("showMessageDialog", title, message, ImmutableList.of(Localizer.getInstance().getMessage("lblOK")), 0);
         showOptionDialog(message, title, icon, ImmutableList.of(Localizer.getInstance().getMessage("lblOK")), 0);
     }
 
@@ -83,8 +85,12 @@ public class FOptionPane extends FDialog {
     }
     
     public static int showOptionDialog(final String message, final String title, final SkinImage icon, final List<String> options, final int defaultOption) {
+        logDialogEvent("showOptionDialog", title, message, options, defaultOption);
         // not fully done loading yet, avoid crash when called by colorCheck for random decks (as each item gets selected after another)
         if (FView.SINGLETON_INSTANCE.getSplash() != null) {
+            if (ForgePreferences.DEV_MODE) {
+                System.out.println("[DIALOG] skipped due to splash screen still visible");
+            }
             return 0;
         }
         return showOptionDialog(message, title, icon, null, options, defaultOption);
@@ -122,6 +128,7 @@ public class FOptionPane extends FDialog {
 
     @SuppressWarnings("unchecked")
     public static <T> T showInputDialog(final String message, final String title, final SkinImage icon, final String initialInput, final List<T> inputOptions) {
+        logDialogEvent("showInputDialog", title, message, inputOptions, -1);
         final Callable<T> showChoice = () -> {
             final JComponent inputField;
             FTextField txtInput = null;
@@ -319,5 +326,32 @@ public class FOptionPane extends FDialog {
 
     public void setButtonEnabled(final int index, final boolean enabled) {
         buttons[index].setEnabled(enabled);
+    }
+
+    private static void logDialogEvent(final String method, final String title, final String message,
+            final List<?> options, final int defaultOption) {
+        if (!ForgePreferences.DEV_MODE) {
+            return;
+        }
+
+        final String safeTitle = sanitizeForLog(title);
+        final String safeMessage = sanitizeForLog(message);
+        final String safeOptions = options == null ? "null" : sanitizeForLog(options.toString());
+        System.out.println("[DIALOG] method=" + method
+                + ", title=" + safeTitle
+                + ", message=" + safeMessage
+                + ", options=" + safeOptions
+                + ", defaultOption=" + defaultOption);
+    }
+
+    private static String sanitizeForLog(final String text) {
+        if (text == null) {
+            return "<null>";
+        }
+        String sanitized = text.replace('\r', ' ').replace('\n', ' ');
+        if (sanitized.length() > 260) {
+            sanitized = sanitized.substring(0, 260) + "...";
+        }
+        return sanitized;
     }
 }

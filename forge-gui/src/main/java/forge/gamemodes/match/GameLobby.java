@@ -346,27 +346,27 @@ public abstract class GameLobby implements IHasGameType {
         }
 
         if (activeSlots.size() < 2) {
-            SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblRequiredLeastTwoPlayerStartGame"));
+            SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblRequiredLeastTwoPlayerStartGame"), "GameLobby");
             return null;
         }
 
         if (!isEnoughTeams()) {
-            SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblNotEnoughTeams"));
+            SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblNotEnoughTeams"), "GameLobby");
             return null;
         }
 
         for (final LobbySlot slot : activeSlots) {
             if (!slot.isReady()) {
-                SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblPlayerIsNotReady", slot.getName()));
+                SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblPlayerIsNotReady", slot.getName()), "GameLobby");
                 return null;
             }
             if (slot.getDeck() == null) {
-                SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblPleaseSpecifyPlayerDeck", slot.getName()));
+                SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblPleaseSpecifyPlayerDeck", slot.getName()), "GameLobby");
                 return null;
             }
             if (hasVariant(GameType.Commander) || hasVariant(GameType.Oathbreaker) || hasVariant(GameType.TinyLeaders) || hasVariant(GameType.Brawl)) {
                 if (!slot.getDeck().has(DeckSection.Commander)) {
-                    SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblPlayerDoesntHaveCommander", slot.getName()));
+                    SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblPlayerDoesntHaveCommander", slot.getName()), "GameLobby");
                     return null;
                 }
             }
@@ -501,7 +501,7 @@ public abstract class GameLobby implements IHasGameType {
 
                 if (variantTypes.contains(GameType.Vanguard)) {
                     if (avatarPool == null || avatarPool.countAll() == 0) { //ERROR! null if avatar deselected on list
-                        SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblNoSelectedVanguardAvatarForPlayer", name));
+                        SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblNoSelectedVanguardAvatarForPlayer", name), "GameLobby");
                         return null;
                     }
                 }

@@ -143,7 +143,7 @@ public class LoadGauntletScreen extends LaunchScreen {
                 if (gauntletName.equals(oldGauntletName)) { return; } //quit if chose same name
 
                 if (gauntletName.isEmpty()) {
-                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblPleaseSpecifyGauntletName"));
+                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblPleaseSpecifyGauntletName"), "LoadGauntletScreen");
                     continue;
                 }
 
@@ -155,7 +155,7 @@ public class LoadGauntletScreen extends LaunchScreen {
                     }
                 }
                 if (exists) {
-                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblGauntletNameExistsPleasePickAnotherName"));
+                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblGauntletNameExistsPleasePickAnotherName"), "LoadGauntletScreen");
                     continue;
                 }
                 break;

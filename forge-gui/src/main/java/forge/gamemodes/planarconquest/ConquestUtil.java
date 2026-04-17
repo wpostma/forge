@@ -106,11 +106,11 @@ public class ConquestUtil {
             name = QuestUtil.cleanString(name);
 
             if (name.isEmpty()) {
-                SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblPleaseSpecifyConquestName"));
+                SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblPleaseSpecifyConquestName"), "ConquestUtil");
                 continue;
             }
             if (FileUtil.doesFileExist(ForgeConstants.CONQUEST_SAVE_DIR + name + ".dat")) {
-                SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblConquestNameExistsPleasePickAnotherName"));
+                SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblConquestNameExistsPleasePickAnotherName"), "ConquestUtil");
                 continue;
             }
             break;

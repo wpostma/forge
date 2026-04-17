@@ -259,7 +259,6 @@ public class VPrompt implements IVDoc<CPrompt> {
     public void setNeedsAttention(final boolean needsAttention0, final FButton defaultButton) {
         if (attentionButton != null && attentionButton != defaultButton) {
             attentionButton.setForeground(FSkin.getColor(FSkin.Colors.CLR_TEXT));
-            attentionButton.setBorder(BorderFactory.createEmptyBorder());
         }
 
         needsAttention = needsAttention0;
@@ -296,12 +295,8 @@ public class VPrompt implements IVDoc<CPrompt> {
         updateAttentionBorder();
         btnOK.setForeground(FSkin.getColor(FSkin.Colors.CLR_TEXT));
         btnCancel.setForeground(FSkin.getColor(FSkin.Colors.CLR_TEXT));
-        btnOK.setBorder(BorderFactory.createEmptyBorder());
-        btnCancel.setBorder(BorderFactory.createEmptyBorder());
         if (needsAttention && attentionButton != null && attentionButton.isEnabled()) {
             attentionButton.setForeground(attentionPulseBright ? ATTENTION_BUTTON_PULSE_COLOR : ATTENTION_BUTTON_COLOR);
-            attentionButton.setBorder(BorderFactory.createLineBorder(
-                    attentionPulseBright ? ATTENTION_BORDER_PULSE_COLOR : ATTENTION_BORDER_COLOR, 3));
             attentionButton.repaint();
         }
     }

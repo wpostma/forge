@@ -310,7 +310,7 @@ public class SealedCardPoolGenerator {
 
                 // present list to user
                 if (customs.isEmpty()) {
-                    SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblNotFoundCustomSealedFiles"));
+                    SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblNotFoundCustomSealedFiles"), "SealedCardPoolGenerator");
                     return;
                 }
 

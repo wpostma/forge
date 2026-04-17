@@ -184,7 +184,7 @@ public class LoadQuestScreen extends LaunchScreen {
                 if (questName.equals(oldQuestName)) { return; } //quit if chose same name
 
                 if (questName.isEmpty()) {
-                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblQuestNameEmpty"));
+                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblQuestNameEmpty"), "LoadQuestScreen");
                     continue;
                 }
 
@@ -196,7 +196,7 @@ public class LoadQuestScreen extends LaunchScreen {
                     }
                 }
                 if (exists) {
-                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblQuestExists"));
+                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblQuestExists"), "LoadQuestScreen");
                     continue;
                 }
                 break;

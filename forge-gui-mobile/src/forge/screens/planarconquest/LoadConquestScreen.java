@@ -179,7 +179,7 @@ public class LoadConquestScreen extends LaunchScreen {
                 if (questName.equals(oldConquestName)) { return; } //quit if chose same name
 
                 if (questName.isEmpty()) {
-                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblPleaseSpecifyConquestName"));
+                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblPleaseSpecifyConquestName"), "LoadConquestScreen");
                     continue;
                 }
 
@@ -191,7 +191,7 @@ public class LoadConquestScreen extends LaunchScreen {
                     }
                 }
                 if (exists) {
-                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblConquestNameExistsPleasePickAnotherName"));
+                    SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblConquestNameExistsPleasePickAnotherName"), "LoadConquestScreen");
                     continue;
                 }
                 break;

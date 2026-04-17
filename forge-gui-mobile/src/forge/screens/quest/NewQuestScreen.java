@@ -581,11 +581,11 @@ public class NewQuestScreen extends FScreen {
             questName = QuestUtil.cleanString(questName);
 
             if (questName.isEmpty()) {
-                SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblQuestNameEmpty"));
+                SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblQuestNameEmpty"), "NewQuestScreen");
                 continue;
             }
             if (FileUtil.doesFileExist(ForgeConstants.QUEST_SAVE_DIR + questName + ".dat")) {
-                SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblQuestExists"));
+                SOptionPane.showMessageDialog(Forge.getLocalizer().getMessage("lblQuestExists"), "NewQuestScreen");
                 continue;
             }
             break;

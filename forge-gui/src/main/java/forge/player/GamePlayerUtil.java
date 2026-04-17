@@ -130,7 +130,7 @@ public final class GamePlayerUtil {
         SOptionPane.showMessageDialog("Thank you, " + playerName + ". "
                 + "You will not be prompted again but you can change\n"
                 + "your name at any time using the \"Player Name\" setting in Preferences\n"
-                + "or via the constructed match setup screen\n");
+                + "or via the constructed match setup screen\n", "GamePlayerUtil");
     }
 
     private static String getPlayerNameUsingFirstTimePrompt() {

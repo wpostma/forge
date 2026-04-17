@@ -183,7 +183,7 @@ public class BoosterDraft implements IBoosterDraft {
                 final List<CustomLimited> myDrafts = loadCustomDrafts();
 
                 if (myDrafts.isEmpty()) {
-                    SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblNotFoundCustomDraftFiles"));
+                    SOptionPane.showMessageDialog(Localizer.getInstance().getMessage("lblNotFoundCustomDraftFiles"), "BoosterDraft");
                 } else {
                     myDrafts.sort(Comparator.comparing(DeckBase::getName));
 

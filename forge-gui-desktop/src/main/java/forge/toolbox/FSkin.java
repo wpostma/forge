@@ -130,6 +130,14 @@ public class FSkin {
     private static final int ENCODED_SYMBOL_IMAGE_WIDTH = SYMBOL_WIDTH * ENCODED_SYMBOL_IMAGE_SCALE;
     private static final int ENCODED_SYMBOL_IMAGE_HEIGHT = SYMBOL_HEIGHT * ENCODED_SYMBOL_IMAGE_SCALE;
 
+    public static int getEncodedSymbolImageWidth() {
+        return ENCODED_SYMBOL_IMAGE_WIDTH;
+    }
+
+    public static int getEncodedSymbolImageHeight() {
+        return ENCODED_SYMBOL_IMAGE_HEIGHT;
+    }
+
     /**
      * Retrieves a color from this skin's color map.
      *
@@ -1089,6 +1097,81 @@ public class FSkin {
         final String path = ForgeConstants.CACHE_SYMBOLS_DIR + "/" + key.replace("/", "") + ".png";
         // HTML still lays symbols out at SYMBOL_WIDTH x SYMBOL_HEIGHT; keep more pixels in the cache for zoomed viewers.
         getImage(skinProp).save(path, ENCODED_SYMBOL_IMAGE_WIDTH, ENCODED_SYMBOL_IMAGE_HEIGHT);
+    }
+
+    public static synchronized void rebuildEncodingSymbolsCache() {
+        final String defaultDir = ForgeConstants.DEFAULT_SKINS_DIR;
+        final BufferedImage iconSprite;
+        final BufferedImage manaIcons;
+        final BufferedImage phyrexian;
+        final BufferedImage colorlessHybrid;
+        final BufferedImage attractionLights;
+
+        try {
+            iconSprite = ImageIO.read(new File(defaultDir + ForgeConstants.SPRITE_ICONS_FILE));
+            manaIcons = ImageIO.read(new File(defaultDir + ForgeConstants.SPRITE_MANAICONS_FILE));
+            phyrexian = ImageIO.read(new File(defaultDir + ForgeConstants.SPRITE_PHYREXIAN_FILE));
+            colorlessHybrid = ImageIO.read(new File(defaultDir + ForgeConstants.SPRITE_COLORLESS_HYBRID_FILE));
+            attractionLights = ImageIO.read(new File(defaultDir + ForgeConstants.SPRITE_ATTRACTION_LIGHTS_FILE));
+        } catch (final IOException e) {
+            throw new IllegalStateException("Unable to load symbol sprite sheets from " + defaultDir, e);
+        }
+
+        for (Map.Entry<String, FSkinProp> e : FSkinProp.MANA_IMG.entrySet()) {
+            prepareEncodingSymbolImage(e.getValue(), iconSprite, manaIcons, phyrexian, colorlessHybrid, attractionLights);
+        }
+        prepareEncodingSymbolImage(FSkinProp.IMG_ENERGY, iconSprite, manaIcons, phyrexian, colorlessHybrid, attractionLights);
+        prepareEncodingSymbolImage(FSkinProp.IMG_TICKET, iconSprite, manaIcons, phyrexian, colorlessHybrid, attractionLights);
+        prepareEncodingSymbolImage(FSkinProp.IMG_EXPERIENCE, iconSprite, manaIcons, phyrexian, colorlessHybrid, attractionLights);
+        prepareEncodingSymbolImage(FSkinProp.IMG_ALCHEMY, iconSprite, manaIcons, phyrexian, colorlessHybrid, attractionLights);
+
+        final File dir = new File(ForgeConstants.CACHE_SYMBOLS_DIR);
+        if (!dir.mkdirs() && !dir.isDirectory()) {
+            throw new IllegalStateException("Unable to create symbols cache directory: " + dir.getAbsolutePath());
+        }
+        final File[] files = dir.listFiles();
+        if (files != null) {
+            for (final File file : files) {
+                if (file.isFile() && file.getName().toLowerCase().endsWith(".png")) {
+                    file.delete();
+                }
+            }
+        }
+
+        for (Map.Entry<String, FSkinProp> e : FSkinProp.MANA_IMG.entrySet()) {
+            addEncodingSymbol(e.getKey(), e.getValue());
+        }
+        addEncodingSymbol("E", FSkinProp.IMG_ENERGY);
+        addEncodingSymbol("TK", FSkinProp.IMG_TICKET);
+        addEncodingSymbol("EXPERIENCE", FSkinProp.IMG_EXPERIENCE);
+        addEncodingSymbol("A-", FSkinProp.IMG_ALCHEMY);
+    }
+
+    private static void prepareEncodingSymbolImage(final FSkinProp skinProp,
+            final BufferedImage iconSprite,
+            final BufferedImage manaIcons,
+            final BufferedImage phyrexian,
+            final BufferedImage colorlessHybrid,
+            final BufferedImage attractionLights) {
+        switch (skinProp.getType()) {
+        case IMAGE:
+            setImage(skinProp, iconSprite);
+            break;
+        case MANAICONS:
+            setImage(skinProp, manaIcons);
+            break;
+        case PHYREXIAN:
+            setImage(skinProp, phyrexian);
+            break;
+        case COLORLESS_HYBRID:
+            setImage(skinProp, colorlessHybrid);
+            break;
+        case ATTRACTION_LIGHTS:
+            setImage(skinProp, attractionLights);
+            break;
+        default:
+            throw new IllegalStateException("Unsupported symbol sprite type for " + skinProp + ": " + skinProp.getType());
+        }
     }
 
     public static String encodeSymbols(String str, final boolean formatReminderText) {

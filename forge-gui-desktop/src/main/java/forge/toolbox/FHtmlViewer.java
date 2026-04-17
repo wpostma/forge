@@ -107,17 +107,36 @@ public class FHtmlViewer extends SkinnedEditorPane {
             return;
         }
 
-        activeZoomFactor = preferredZoomFactor;
-        updateHtmlFontRule();
-        setSuperText(getRenderedHtmlText());
+        final float[] candidateZooms = {
+                preferredZoomFactor,
+                minimumZoomFactor,
+                1.5f,
+                1.0f,
+                0.75f
+        };
 
-        final Dimension preferredSize = getPreferredSize();
-        if (preferredZoomFactor > minimumZoomFactor
-                && (preferredSize.width > extentSize.width || preferredSize.height > extentSize.height)) {
-            activeZoomFactor = minimumZoomFactor;
+        float appliedZoom = preferredZoomFactor;
+        float lastTriedZoom = -1f;
+        for (final float candidateZoom : candidateZooms) {
+            if (candidateZoom <= 0f || candidateZoom > preferredZoomFactor || Math.abs(candidateZoom - lastTriedZoom) < 0.001f) {
+                continue;
+            }
+
+            lastTriedZoom = candidateZoom;
+            activeZoomFactor = candidateZoom;
             updateHtmlFontRule();
             setSuperText(getRenderedHtmlText());
+
+            final Dimension preferredSize = getPreferredSize();
+            appliedZoom = candidateZoom;
+            if (preferredSize.width <= extentSize.width && preferredSize.height <= extentSize.height) {
+                break;
+            }
         }
+
+        activeZoomFactor = appliedZoom;
+        updateHtmlFontRule();
+        setSuperText(getRenderedHtmlText());
 
         setCaretPosition(0);
         revalidate();

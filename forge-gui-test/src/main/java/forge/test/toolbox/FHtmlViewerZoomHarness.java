@@ -3,10 +3,12 @@ package forge.test.toolbox;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Desktop;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -122,7 +124,7 @@ public final class FHtmlViewerZoomHarness {
     }
 
     private static void show() {
-        final JFrame frame = new JFrame("FHtmlViewer zoom harness");
+        final JFrame frame = new JFrame("Forge UI Tests Tool");
         final FHtmlViewer viewer = new FHtmlViewer();
         final JScrollPane scroller = new JScrollPane(viewer);
         final JLabel status = new JLabel();
@@ -135,27 +137,37 @@ public final class FHtmlViewerZoomHarness {
             updateStatus(status, viewer, scroller.getViewport().getExtentSize());
         });
 
-        final JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEADING));
-        addCacheButton(buttons, "Generate symbols", status, () -> {
+        final JPanel cacheButtons = new JPanel(new FlowLayout(FlowLayout.LEADING));
+        addCacheButton(cacheButtons, "Generate symbols", status, () -> {
             FSkin.rebuildEncodingSymbolsCache();
             return validateSymbolCache();
         });
-        addCacheButton(buttons, "Validate symbols", status, FHtmlViewerZoomHarness::validateSymbolCache);
-        addCacheButton(buttons, "Purge symbols", status, () -> {
+        addCacheButton(cacheButtons, "Validate symbols", status, FHtmlViewerZoomHarness::validateSymbolCache);
+        addCacheButton(cacheButtons, "Purge symbols", status, () -> {
             purgeSymbolCache();
             return validateSymbolCache();
         });
-        addContentButton(buttons, "Short prompt", viewer, status, scroller,
+        addCacheButton(cacheButtons, "Open symbols folder", status, () -> {
+            openSymbolsFolder();
+            return validateSymbolCache();
+        });
+
+        final JPanel contentButtons = new JPanel(new FlowLayout(FlowLayout.LEADING));
+        addContentButton(contentButtons, "Short prompt", viewer, status, scroller,
                 "Do you want to play or draw?");
-        addContentButton(buttons, "Priority", viewer, status, scroller,
+        addContentButton(contentButtons, "Priority", viewer, status, scroller,
                 "Priority: WarpFactor\nTurn: 2 (WarpFactor)\nPhase: Main phase, precombat\nStack: Empty");
-        addContentButton(buttons, "Long choice", viewer, status, scroller,
+        addContentButton(contentButtons, "Long choice", viewer, status, scroller,
                 "Choose one:\n\n"
                 + "- Return target permanent to its owner's hand.\n"
                 + "- Draw two cards, then discard a card.\n"
                 + "- Create a tapped Treasure token.");
-        addContentButton(buttons, "Raw HTML", viewer, status, scroller,
+        addContentButton(contentButtons, "Raw HTML", viewer, status, scroller,
                 "<html><b>Bold question</b><br>Pay Mana Cost: {W}{R}{R}</html>");
+
+        final JPanel buttons = new JPanel(new GridLayout(2, 1));
+        buttons.add(cacheButtons);
+        buttons.add(contentButtons);
 
         final JPanel top = new JPanel(new BorderLayout());
         top.add(buttons, BorderLayout.NORTH);
@@ -163,17 +175,23 @@ public final class FHtmlViewerZoomHarness {
 
         frame.add(top, BorderLayout.NORTH);
         frame.add(scroller, BorderLayout.CENTER);
-        frame.setSize(new Dimension(700, 420));
+        frame.setSize(new Dimension(980, 480));
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         frame.setVisible(true);
 
+        runStartupCacheCheck(status);
         viewer.setText("Do you want to play or draw?");
         EventQueue.invokeLater(() -> {
             viewer.fitZoomTo(scroller.getViewport().getExtentSize());
             updateStatus(status, viewer, scroller.getViewport().getExtentSize());
             appendCacheStatus(status, validateSymbolCache());
         });
+    }
+
+    private static void runStartupCacheCheck(final JLabel status) {
+        final String cacheStatus = validateSymbolCache();
+        status.setText("startup " + cacheStatus);
     }
 
     private static void addCacheButton(final JPanel buttons, final String label, final JLabel status,
@@ -274,6 +292,19 @@ public final class FHtmlViewerZoomHarness {
             if (!symbolFile.delete()) {
                 throw new IllegalStateException("Could not delete " + symbolFile.getAbsolutePath());
             }
+        }
+    }
+
+    private static void openSymbolsFolder() {
+        final File symbolsDir = new File(ForgeConstants.CACHE_SYMBOLS_DIR);
+        symbolsDir.mkdirs();
+        if (!Desktop.isDesktopSupported()) {
+            throw new IllegalStateException("Desktop API is not supported on this platform");
+        }
+        try {
+            Desktop.getDesktop().open(symbolsDir);
+        } catch (final IOException ex) {
+            throw new IllegalStateException("Could not open " + symbolsDir.getAbsolutePath(), ex);
         }
     }
 
